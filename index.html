@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Bundles</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>">
+</head>
+<body>
+
+    <div id="timestamp" class="timestamp">Last Saved: Never</div>
+
+    <div id="save-prompt">
+        <span>Unsaved progress!</span>
+        <button id="quick-save-btn">Save Now</button>
+    </div>
+
+    <div id="bg-wrapper">
+        <div class="bg-layer active"></div>
+        <div class="bg-layer"></div>
+        <div id="bg-particles"></div>
+    </div>
+
+    <div id="layout-wrapper">
+        <main class="main-container">
+            
+        <nav id="app-nav" class="hidden">
+            <div class="nav-group left">
+                <button id="global-back-btn" class="nav-icon-btn">←</button>
+            </div>
+            
+            <div class="nav-group center">
+                <button class="tab-btn" data-target="view-wordlist">Wordlist</button>
+                <button class="tab-btn" data-target="view-practice">Practice</button>
+                <button class="tab-btn" data-target="view-competitive">Competitive</button>
+            </div>
+
+            <div class="nav-group right">
+                <button id="settings-btn" class="nav-icon-btn">⚙️</button>
+            </div>
+        </nav>
+
+        <nav id="sub-nav" class="hidden">
+            <button id="btn-sub-play" class="sub-tab-btn" data-target="view-competitive">Play</button>
+            <button id="btn-sub-stats" class="sub-tab-btn" data-target="view-stats">Statistics</button>
+        </nav>
+
+        <section id="view-landing" class="view">
+            <h1>Select a Word Bundle</h1>
+            <div class="bundle-grid" id="bundle-grid">
+                </div>
+        </section>
+
+        <section id="view-wordlist" class="view hidden">
+            <div class="controls-header">
+                <input type="text" id="wordlist-search" placeholder="Search words...">
+                <div class="sort-btn-group">
+                    <button class="sort-btn active" data-key="default">Default</button>
+                    <button class="sort-btn" data-key="en">English</button>
+                    <button class="sort-btn" data-key="es">Spanish</button>
+                    <button class="sort-btn" data-key="skip">Don't Know</button>
+                    <button class="sort-btn" data-key="wrong">Wrong</button>
+                </div>
+            </div>
+            <div class="word-grid" id="wordlist-container"></div>
+        </section>
+
+        <section id="view-competitive" class="view hidden">
+            <div class="content-wrapper">
+                <div id="question-area">
+                    <h2 id="question-label">Translate to Spanish:</h2>
+                    <div class="question-row">
+                        <div id="question-word">Loading...</div>
+                        <button id="question-audio-btn" title="Play Audio"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button>
+                    </div>
+                    <div id="question-note" class="hidden"></div>
+                    <div id="feedback-message"></div>
+                    <div id="streak-progress-wrapper" class="hidden">
+                        <div id="streak-progress-fill"></div>
+                    </div>
+                </div>
+
+                <div class="input-area">
+                    <div id="hint-display" class="hidden"></div>
+                    <input type="text" id="answer-input" placeholder="Type answer here..." autocomplete="off">
+                </div>
+
+                <div class="controls-row" id="controls-row">
+                    <button id="btn-hint" class="control-btn">Hint (1)</button>
+                    <button id="btn-skip" class="control-btn">Don't Know</button>
+                    <div id="status-message" class="control-btn hidden">Correct!</div>
+                    <button id="btn-undo" class="control-btn hidden">Undo</button>
+                    
+                    <div id="progress-bar-container" class="hidden">
+                        <div id="progress-bar"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-practice" class="view hidden">
+            <button id="btn-reset-practice" class="hidden" title="Reset Practice Progress">↺</button>
+            <div id="practice-mode-selection" class="content-wrapper">
+                <h2>Select Practice Mode</h2>
+                <div style="display: flex; gap: 20px; justify-content: center; margin-top: 30px; flex-wrap: wrap;">
+                    <button id="btn-practice-es" class="bundle-btn" style="width: 150px; height: 150px;">
+                        <span style="font-size: 1.2rem; display: block; margin-bottom: 10px; font-weight: bold;">Spanish Target</span>
+                        <span style="font-size: 0.8rem; font-weight: normal;">(Find English)</span>
+                    </button>
+                    <button id="btn-practice-en" class="bundle-btn" style="width: 150px; height: 150px;">
+                        <span style="font-size: 1.2rem; display: block; margin-bottom: 10px; font-weight: bold;">English Target</span>
+                        <span style="font-size: 0.8rem; font-weight: normal;">(Find Spanish)</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="practice-game-area" class="hidden" style="height: 100%; display: flex; flex-direction: column;">
+                <div id="practice-progress-container">
+                    <div id="practice-progress-fill"></div>
+                    <span id="practice-progress-text">0 / 0</span>
+                </div>
+                <div id="practice-question-area" style="flex-shrink: 0; text-align: center; margin-bottom: 20px;">
+                    <h2 id="practice-label" style="margin-top: 0;">Find the translation:</h2>
+                    <div class="question-row">
+                        <div id="practice-word">Loading...</div>
+                        <button id="practice-audio-btn" title="Play Audio"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button>
+                    </div>
+                    <div style="display: flex; gap: 10px; justify-content: center; margin-top: 10px;">
+                        <button id="btn-practice-shuffle" class="control-btn" style="background-color: #718096; font-size: 0.85rem; padding: 6px 12px; width: auto; flex: 0 0 auto; min-width: 100px;">Shuffle Grid</button>
+                        <button id="btn-practice-skip" class="control-btn" style="background-color: #e53e3e; font-size: 0.85rem; padding: 6px 12px; width: auto; flex: 0 0 auto; min-width: 100px;">Don't Know</button>
+                    </div>
+                </div>
+                <input type="text" id="practice-search" placeholder="Search grid..." autocomplete="off">
+                <div id="practice-options-grid" class="word-grid" style="flex: 1; padding: 5px;"></div>
+            </div>
+        </section>
+
+        <section id="view-practice-stats" class="view hidden">
+            <div class="controls-header">
+                <div style="display: flex; align-items: center; gap: 10px; position: relative;">
+                    <input type="text" id="practice-stats-search" placeholder="Search practice stats...">
+                    <button id="btn-practice-stats-cols" class="nav-icon-btn" style="font-size: 1rem; padding: 8px; border: 1px solid #e2e8f0; background: #fff;" title="Column Options">⚙️</button>
+                    <div id="practice-stats-cols-menu" class="hidden"></div>
+                </div>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-sort="en">English</th>
+                            <th data-sort="es">Spanish</th>
+                            <th data-sort="p_attempts">Attempts</th>
+                            <th data-sort="p_streak">Streak</th>
+                            <th data-sort="p_correct">Correct</th>
+                            <th data-sort="p_incorrect" title="Combines 'Wrong' and 'Don't Know' counts">Incorrect <span style="font-size: 0.8em; cursor: help;">ⓘ</span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="practice-stats-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="view-stats" class="view hidden">
+            <div class="controls-header">
+                <div style="display: flex; align-items: center; gap: 10px; position: relative;">
+                    <input type="text" id="stats-search" placeholder="Search statistics...">
+                    <button id="btn-stats-cols" class="nav-icon-btn" style="font-size: 1rem; padding: 8px; border: 1px solid #e2e8f0; background: #fff;" title="Column Options">⚙️</button>
+                    <div id="stats-cols-menu" class="hidden"></div>
+                </div>
+                <div class="stats-legend">
+                    <div class="legend-item">🥉 Bronze (5+)</div>
+                    <div class="legend-item">🥈 Silver (10+)</div>
+                    <div class="legend-item">🥇 Gold (15+)</div>
+                </div>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-sort="en">English</th>
+                            <th data-sort="es">Spanish</th>
+                            <th data-sort="attempts">Attempts</th>
+                            <th data-sort="streak">Streak</th>
+                            <th data-sort="correct">Correct</th>
+                            <th data-sort="incorrect" title="Combines 'Wrong' and 'Don't Know' counts">Incorrect <span style="font-size: 0.8em; cursor: help;">ⓘ</span></th>
+                            <th data-sort="weight">Weight (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stats-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        </main>
+
+        <aside id="testing-container" class="hidden">
+            <div class="settings-header">Settings</div>
+            <div class="settings-scroll-area">
+            <div id="debug-content" style="padding: 10px 15px 0 15px; font-size: 0.9rem; color: #666;"></div>
+            
+            <div class="settings-content">
+                <div class="settings-group">
+                    <h3>General</h3>
+                    <div class="setting-item">
+                        <label>Voice Gender</label>
+                        <div class="toggle-wrapper" style="margin-bottom: 8px;">
+                            <input type="checkbox" id="random-voice" checked>
+                            <label for="random-voice">Randomize Voice</label>
+                        </div>
+                        <div class="toggle-wrapper">
+                            <div style="flex: 1; display: flex; gap: 5px;">
+                                <button class="data-btn voice-btn" data-gender="male">Male</button>
+                                <button class="data-btn voice-btn" data-gender="female">Female</button>
+                            </div>
+                            <button id="btn-test-voice" class="data-btn" style="width: auto; margin-bottom: 0;">Test</button>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <label>Voice Volume</label>
+                        <div class="toggle-wrapper">
+                            <input type="range" id="voice-volume" min="0" max="1" step="0.1" value="1">
+                            <span id="voice-volume-val" style="margin-left: 10px; font-weight: bold;">100%</span>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <label>Strict Accents</label>
+                        <div class="toggle-wrapper">
+                            <input type="checkbox" id="strict-accents" checked>
+                            <label for="strict-accents">Require accents</label>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <label>Inverted Punctuation</label>
+                        <div class="toggle-wrapper">
+                            <input type="checkbox" id="require-inverted-punctuation">
+                            <label for="require-inverted-punctuation">Require paired ¿...?/¡...!</label>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <label>Focus Mode</label>
+                        <div class="toggle-wrapper">
+                            <input type="checkbox" id="focus-mode-toggle">
+                            <label for="focus-mode-toggle">Fade distractions in Competitive</label>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <label>Background Visibility</label>
+                        <div class="toggle-wrapper">
+                            <input type="checkbox" id="disable-bg">
+                            <label for="disable-bg">Disable Animation</label>
+                        </div>
+                        <div class="toggle-wrapper" style="margin-top: 10px;">
+                            <label for="disabled-bg-color" style="font-weight: normal; font-size: 0.9rem;">Solid Color:</label>
+                            <input type="color" id="disabled-bg-color" value="#ffffff" style="height: 30px; width: 60px; padding: 0; border: none; cursor: pointer;">
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <label>UI Animation Speed</label>
+                        <div class="toggle-wrapper">
+                            <input type="range" id="anim-speed" min="0.5" max="3" step="0.1" value="1">
+                            <span id="anim-speed-val" style="margin-left: 10px; font-weight: bold;">1.0x</span>
+                        </div>
+                        <div class="recommend-label" id="rec-anim-speed">Recommended: 1.0x</div>
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <h3>Wordlist</h3>
+                    <div class="setting-item">
+                        <label>Wordlist Columns</label>
+                        <div class="toggle-wrapper">
+                            <input type="range" id="wordlist-cols" min="1" max="6" step="1" value="6">
+                            <span id="wordlist-cols-val" style="margin-left: 10px; font-weight: bold;">6</span>
+                        </div>
+                        <div class="recommend-label" id="rec-wordlist-cols">Recommended: 6</div>
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <h3>Practice</h3>
+                    <div class="setting-item">
+                        <label>Practice New Word Delay</label>
+                        <div class="toggle-wrapper">
+                            <input type="range" id="practice-delay" min="500" max="3000" step="100" value="1500">
+                            <span id="practice-delay-val" style="margin-left: 10px; font-weight: bold;">1.5s</span>
+                        </div>
+                        <div class="recommend-label" id="rec-practice-delay">Recommended: 1.5s</div>
+                    </div>
+                    <div class="setting-item">
+                        <label>Practice Choices</label>
+                        <div class="toggle-wrapper">
+                            <input type="range" id="practice-choices" min="3" max="9" step="1" value="9">
+                            <span id="practice-choices-val" style="margin-left: 10px; font-weight: bold;">9</span>
+                        </div>
+                        <div class="recommend-label" id="rec-practice-choices">Recommended: 9</div>
+                    </div>
+                    <div class="setting-item">
+                        <label>Practice UI Speed</label>
+                        <div class="toggle-wrapper">
+                            <input type="range" id="practice-anim-speed" min="0.5" max="3" step="0.1" value="1">
+                            <span id="practice-anim-speed-val" style="margin-left: 10px; font-weight: bold;">1.0x</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <h3>Competitive</h3>
+                    <div class="setting-item">
+                        <label>New Word Delay</label>
+                        <div class="toggle-wrapper">
+                            <input type="range" id="progress-speed" min="500" max="5000" step="100" value="2000">
+                            <span id="progress-speed-val" style="margin-left: 10px; font-weight: bold;">2.0s</span>
+                        </div>
+                        <div class="recommend-label" id="rec-progress-speed">Recommended: 1.5s</div>
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <h3>Data</h3>
+                    <div class="setting-item">
+                        <label>Automatic Download</label>
+                        <div class="toggle-wrapper">
+                            <input type="checkbox" id="auto-download" checked>
+                            <label for="auto-download">Enable Auto-Download</label>
+                        </div>
+                        <div class="toggle-wrapper" style="margin-top: 10px;">
+                            <label style="font-weight: normal; font-size: 0.9rem;">Every</label>
+                            <input type="range" id="auto-download-freq" min="5" max="50" step="5" value="10">
+                            <span id="auto-download-freq-val" style="margin-left: 10px; font-weight: bold;">10</span> <span style="font-size: 0.9rem; margin-left: 5px;">answers</span>
+                        </div>
+                        <div class="recommend-label" id="rec-auto-download-freq">Recommended: 25 answers</div>
+                    </div>
+                    <div class="setting-item">
+                        <label>Statistics Data</label>
+                        <div class="toggle-wrapper" style="justify-content: space-between; gap: 5px;">
+                            <button id="btn-export" class="data-btn" style="flex: 1 0 40%;">Download Data</button>
+                            <button id="btn-import-trigger" class="data-btn" style="flex: 1 0 40%;">Import Data</button>
+                            <button id="btn-delete-all-data" class="data-btn" style="color: #fff; background-color: var(--danger); border-color: var(--danger); flex: 1 0 40%;">Delete All</button>
+                            <input type="file" id="file-import" accept=".json" multiple style="display: none;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <h3>Debug</h3>
+                    <div class="setting-item">
+                        <div style="display: flex; gap: 10px;">
+                            <button id="btn-debug-enable" class="data-btn" style="flex: 1;">Enable</button>
+                            <button id="btn-debug-disable" class="data-btn" style="flex: 1;">Disable</button>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <button id="btn-debug-recalibrate" class="data-btn">Recalibrate Weights</button>
+                    </div>
+                    <div class="setting-item">
+                        <div style="display: flex; gap: 10px;">
+                            <button id="btn-settings-undo" class="data-btn" disabled style="flex: 1;">Undo</button>
+                            <button id="btn-settings-redo" class="data-btn" disabled style="flex: 1;">Redo</button>
+                        </div>
+                        <div id="settings-undo-label" style="font-size: 0.8rem; color: #666; text-align: center; margin-top: 5px; font-style: italic;">Nothing to undo</div>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </aside>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="speech.js"></script>
+    <script src="app.js"></script>
+
+    <!-- SVG Filters -->
+    <svg style="display: none;">
+        <defs>
+            <filter id="pixelate-filter">
+                <feMorphology operator="dilate" radius="4" in="SourceGraphic" result="dilated"/>
+            </filter>
+        </defs>
+    </svg>
+</body>
+</html>
