@@ -38,8 +38,10 @@ const AppState = {
         practiceDelay: 1500,
         practiceChoices: 9,
         practiceAnimSpeed: 1,
+        modeGridSize: 920,
         wordlistCols: 6,
-        animSpeed: 1,
+        animSpeed: 1.2,
+        animPreset: '1',
         autoDownload: true,
         autoDownloadFrequency: 10,
         debugMode: false,
@@ -72,7 +74,11 @@ const AppState = {
     wordlistSort: { key: 'default', order: 'asc' },
     wordlistSearch: '',
     statsSearch: '',
-    practiceStatsSearch: ''
+    practiceStatsSearch: '',
+    modePage: 0,
+    vocabPage: 0,
+    isCustomSelectionMode: false,
+    customSelectedBundleIds: []
 };
 
 /* --- DOM ELEMENTS --- */
@@ -80,7 +86,15 @@ const UI = {
     mainContainer: document.querySelector('.main-container'),
     testingContainer: document.getElementById('testing-container'),
     debugContent: document.getElementById('debug-content'),
+    welcome: document.getElementById('view-welcome'),
+    btnContinueGuest: document.getElementById('btn-continue-guest'),
+    modeSelect: document.getElementById('view-mode-select'),
+    modeGrid: document.getElementById('mode-grid'),
+    modePagePrev: document.getElementById('mode-page-prev'),
+    modePageNext: document.getElementById('mode-page-next'),
     landing: document.getElementById('view-landing'),
+    vocabPagePrev: document.getElementById('vocab-page-prev'),
+    vocabPageNext: document.getElementById('vocab-page-next'),
     wordlist: document.getElementById('view-wordlist'),
     competitive: document.getElementById('view-competitive'),
     practice: document.getElementById('view-practice'),
@@ -134,8 +148,183 @@ let sessionActionCount = 0;
 let previousStreak = 0;
 const THEMES = ['bg-rainbow', 'bg-ocean', 'bg-sunset', 'bg-forest', 'bg-nebula'];
 
+function getAnimationSpeed() {
+    return AppState.settings.animSpeed || 1;
+}
+
+function getAnimDurMult() {
+    return 1;
+}
+
+function getAnimEasing() {
+    return 'ease';
+}
+
+function getScaledDuration(baseMs) {
+    return baseMs * getAnimDurMult() / getAnimationSpeed();
+}
+
+function getViewFadeDuration() {
+    return 420 * getAnimDurMult() / getAnimationSpeed();
+}
+
+function getViewResizeDuration() {
+    return 600 * getAnimDurMult() / getAnimationSpeed();
+}
+
 function getAvailableBundles() {
     return typeof availableBundles !== 'undefined' ? availableBundles : [];
+}
+
+function getCustomVocabBundleId() {
+    return typeof CUSTOM_VOCAB_BUNDLE_ID !== 'undefined' ? CUSTOM_VOCAB_BUNDLE_ID : 'bundle_custom_vocab';
+}
+
+function getBaseVocabBundleIds() {
+    return typeof BASE_VOCAB_BUNDLE_IDS !== 'undefined' ? BASE_VOCAB_BUNDLE_IDS : ['bundle_1', 'bundle_2', 'bundle_3', 'bundle_4'];
+}
+
+function getCategoryBundleId(category) {
+    if (typeof CATEGORY_TO_BUNDLE_ID !== 'undefined' && category && CATEGORY_TO_BUNDLE_ID[category]) {
+        return CATEGORY_TO_BUNDLE_ID[category];
+    }
+    return null;
+}
+
+function createWordIdentity(word) {
+    const category = (word && word.category ? word.category : '').trim().toLowerCase();
+    const en = (word && word.en ? word.en : '').trim().toLowerCase();
+    const es = (word && word.es ? word.es : '').trim().toLowerCase();
+    return `${category}|||${en}|||${es}`;
+}
+
+function buildWordIndex(words) {
+    const index = new Map();
+    words.forEach((word, idx) => {
+        index.set(createWordIdentity(word), idx);
+    });
+    return index;
+}
+
+function mergeSavedWords(freshWords, savedWords) {
+    if (!Array.isArray(savedWords) || savedWords.length === 0) return freshWords;
+    const savedByIdentity = new Map();
+    savedWords.forEach(savedWord => {
+        savedByIdentity.set(createWordIdentity(savedWord), savedWord);
+    });
+
+    return freshWords.map(freshWord => {
+        const savedWord = savedByIdentity.get(createWordIdentity(freshWord));
+        return savedWord ? { ...freshWord, ...savedWord } : freshWord;
+    });
+}
+
+function loadStoredBundleData() {
+    let fullData = {};
+    const savedJSON = localStorage.getItem('wordBundleStats');
+    if (savedJSON) {
+        try {
+            fullData = JSON.parse(savedJSON) || {};
+        } catch (e) {
+            fullData = {};
+        }
+    }
+    if (!fullData.bundles) fullData.bundles = {};
+    return fullData;
+}
+
+function copyCompetitiveStats(sourceWord, targetWord) {
+    targetWord.attempts = sourceWord.attempts || 0;
+    targetWord.streak = sourceWord.streak || 0;
+    targetWord.wrong = sourceWord.wrong || 0;
+    targetWord.correct = sourceWord.correct || 0;
+    targetWord.skip = sourceWord.skip || 0;
+    targetWord.weight = sourceWord.weight || 100;
+}
+
+function getCustomSelectedBundleIds() {
+    if (!Array.isArray(AppState.customSelectedBundleIds)) return [];
+    return AppState.customSelectedBundleIds.filter(id => getBaseVocabBundleIds().includes(id));
+}
+
+function isBundleSelectedForCustom(bundleId) {
+    return getCustomSelectedBundleIds().includes(bundleId);
+}
+
+function toggleCustomBundleSelection(bundleId) {
+    if (!getBaseVocabBundleIds().includes(bundleId)) return;
+    if (isBundleSelectedForCustom(bundleId)) {
+        AppState.customSelectedBundleIds = getCustomSelectedBundleIds().filter(id => id !== bundleId);
+    } else {
+        AppState.customSelectedBundleIds = [...getCustomSelectedBundleIds(), bundleId];
+    }
+}
+
+function buildCustomBundleData(selectedBundleIds = getCustomSelectedBundleIds()) {
+    const selectedSet = new Set(selectedBundleIds);
+    const chunks = getAvailableBundles()
+        .filter(bundle => selectedSet.has(bundle.id))
+        .map(bundle => (bundle.data || '').trim())
+        .filter(chunk => chunk.length > 0);
+    return chunks.join('\n');
+}
+
+function getRuntimeBundleData(bundle) {
+    if (!bundle) return '';
+    if (bundle.id === getCustomVocabBundleId()) {
+        return buildCustomBundleData();
+    }
+    return bundle.data || '';
+}
+
+function getRuntimeBundle(bundle) {
+    if (!bundle) return bundle;
+    return {
+        ...bundle,
+        data: getRuntimeBundleData(bundle)
+    };
+}
+
+function syncCompetitiveStatsToMirrorBundles(sourceWord) {
+    if (!sourceWord || !AppState.currentBundleId) return;
+
+    const customBundleId = getCustomVocabBundleId();
+    const targetBundleIds = [];
+
+    if (AppState.currentBundleId === customBundleId) {
+        const categoryBundleId = getCategoryBundleId(sourceWord.category);
+        if (categoryBundleId) targetBundleIds.push(categoryBundleId);
+    } else if (getBaseVocabBundleIds().includes(AppState.currentBundleId)) {
+        targetBundleIds.push(customBundleId);
+    }
+
+    if (targetBundleIds.length === 0) return;
+
+    const fullData = loadStoredBundleData();
+    let hasChanges = false;
+
+    targetBundleIds.forEach(targetBundleId => {
+        const targetBundle = getAvailableBundles().find(bundle => bundle.id === targetBundleId);
+        if (!targetBundle) return;
+
+        const freshTargetData = getRuntimeBundleData(targetBundle);
+        const freshTargetWords = freshTargetData ? parseBundleData(freshTargetData) : [];
+        const savedTargetWords = Array.isArray(fullData.bundles[targetBundleId]) ? fullData.bundles[targetBundleId] : [];
+        const mergedTargetWords = freshTargetWords.length > 0
+            ? mergeSavedWords(freshTargetWords, savedTargetWords)
+            : savedTargetWords.map(word => ({ ...word }));
+        const targetIndex = buildWordIndex(mergedTargetWords).get(createWordIdentity(sourceWord));
+
+        if (targetIndex === undefined) return;
+
+        copyCompetitiveStats(sourceWord, mergedTargetWords[targetIndex]);
+        fullData.bundles[targetBundleId] = mergedTargetWords;
+        hasChanges = true;
+    });
+
+    if (hasChanges) {
+        localStorage.setItem('wordBundleStats', JSON.stringify(fullData));
+    }
 }
 
 function stripBracketSections(text) {
@@ -158,11 +347,34 @@ function pickRandomAlternative(alternatives, fallback = '') {
     return fallback;
 }
 
+function setSerEstarPanel(panelId) {
+    const normalizedPanelId = panelId === 'se-competitive' ? 'se-competitive' : 'se-practice';
+    document.querySelectorAll('.se-tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.panel === normalizedPanelId);
+    });
+    document.querySelectorAll('.se-panel').forEach(panel => {
+        panel.classList.toggle('hidden', panel.id !== normalizedPanelId);
+    });
+}
+
+function setParaPorPanel(panelId) {
+    const normalizedPanelId = panelId === 'pp-competitive' ? 'pp-competitive' : 'pp-practice';
+    document.querySelectorAll('.pp-tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.panel === normalizedPanelId);
+    });
+    document.querySelectorAll('.pp-panel').forEach(panel => {
+        panel.classList.toggle('hidden', panel.id !== normalizedPanelId);
+    });
+}
+
 /* --- INITIALIZATION --- */
 window.addEventListener('DOMContentLoaded', () => {
     loadGlobalData();
+    // Ensure animation preset is applied on load
+    document.documentElement.dataset.animPreset = '1';
     updateVoiceUI();
     updateDebugUI();
+    renderModeSelect();
     renderLandingPage();
     setupEventListeners();
     setupStatsColumnMenu();
@@ -172,8 +384,8 @@ window.addEventListener('DOMContentLoaded', () => {
     // Initial sort highlight
     updateSortHeaderStyles();
 
-    // Fade in landing
-    setTimeout(() => UI.landing.classList.add('fade-in'), 10);
+    // Fade in welcome screen first
+    setTimeout(() => UI.welcome.classList.add('fade-in'), 10);
 });
 
 window.addEventListener('beforeunload', () => {
@@ -181,9 +393,83 @@ window.addEventListener('beforeunload', () => {
 });
 
 function setupEventListeners() {
+    if (UI.btnContinueGuest) {
+        UI.btnContinueGuest.addEventListener('click', () => {
+            crossfadeViews(UI.welcome, UI.modeSelect, () => {
+                UI.mainContainer.classList.add('wide');
+                setSelectorNavState('mode');
+            });
+        });
+    }
+
+    if (UI.modePagePrev) {
+        UI.modePagePrev.addEventListener('click', () => {
+            if (AppState.modePage > 0) {
+                swipeGrid(UI.modeGrid, 'right', () => {
+                    AppState.modePage -= 1;
+                    renderModeSelect();
+                });
+            }
+        });
+    }
+
+    if (UI.modePageNext) {
+        UI.modePageNext.addEventListener('click', () => {
+            if (AppState.modePage < 1) {
+                swipeGrid(UI.modeGrid, 'left', () => {
+                    AppState.modePage += 1;
+                    renderModeSelect();
+                });
+            }
+        });
+    }
+
+    if (UI.vocabPagePrev) {
+        UI.vocabPagePrev.addEventListener('click', () => {
+            if (AppState.vocabPage > 0) {
+                swipeGrid(UI.bundleGrid, 'right', () => {
+                    AppState.vocabPage -= 1;
+                    renderLandingPage();
+                });
+            }
+        });
+    }
+
+    if (UI.vocabPageNext) {
+        UI.vocabPageNext.addEventListener('click', () => {
+            if (AppState.vocabPage < 1) {
+                swipeGrid(UI.bundleGrid, 'left', () => {
+                    AppState.vocabPage += 1;
+                    renderLandingPage();
+                });
+            }
+        });
+    }
+
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const target = e.target.dataset.target;
+            const serEstarView = document.getElementById('view-ser-estar');
+            const isSerEstarActive = !!serEstarView && !serEstarView.classList.contains('hidden');
+            const paraPorView = document.getElementById('view-para-por');
+            const isParaPorActive = !!paraPorView && !paraPorView.classList.contains('hidden');
+
+            if (isSerEstarActive && (target === 'se-practice' || target === 'se-competitive')) {
+                setSerEstarPanel(target);
+                document.querySelectorAll('.tab-btn').forEach(tab => {
+                    tab.classList.toggle('active', tab.dataset.target === target);
+                });
+                return;
+            }
+
+            if (isParaPorActive && (target === 'pp-practice' || target === 'pp-competitive')) {
+                setParaPorPanel(target);
+                document.querySelectorAll('.tab-btn').forEach(tab => {
+                    tab.classList.toggle('active', tab.dataset.target === target);
+                });
+                return;
+            }
+
             if (target === 'view-competitive') {
                 const currentView = document.querySelector('.view:not(.hidden)');
                 if (currentView && currentView.id === 'view-competitive') {
@@ -217,6 +503,21 @@ function setupEventListeners() {
 
     document.querySelectorAll('.sub-tab-btn').forEach(btn => {
         btn.addEventListener('click', (e) => switchView(e.target.dataset.target));
+    });
+
+    // SER / ESTAR internal tab switching
+    document.querySelectorAll('.se-tab-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const panelId = e.currentTarget.dataset.panel;
+            setSerEstarPanel(panelId);
+        });
+    });
+
+    document.querySelectorAll('.pp-tab-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const panelId = e.currentTarget.dataset.panel;
+            setParaPorPanel(panelId);
+        });
     });
 
     if (UI.btnPracticeEn) {
@@ -275,8 +576,10 @@ function setupEventListeners() {
         UI.btnResetPractice.addEventListener('click', resetPracticeProgress);
     }
 
-    document.getElementById('settings-btn').addEventListener('click', () => {
-        UI.testingContainer.classList.toggle('hidden');
+    document.querySelectorAll('.settings-toggle-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            UI.testingContainer.classList.toggle('hidden');
+        });
     });
 
     document.getElementById('global-back-btn').addEventListener('click', () => {
@@ -289,6 +592,31 @@ function setupEventListeners() {
             UI.practiceGameArea.classList.add('hidden');
             UI.btnResetPractice.classList.add('hidden');
             UI.practiceModeSelection.classList.remove('hidden');
+            return;
+        }
+
+        // If on vocabulary selector (landing), go back to mode select
+        if (!UI.landing.classList.contains('hidden')) {
+            crossfadeViews(UI.landing, UI.modeSelect, () => {
+                setSelectorNavState('mode');
+            });
+            return;
+        }
+
+        // If on SER/ESTAR view, go back to mode select
+        const serEstarView = document.getElementById('view-ser-estar');
+        if (serEstarView && !serEstarView.classList.contains('hidden')) {
+            crossfadeViews(serEstarView, UI.modeSelect, () => {
+                setSelectorNavState('mode');
+            });
+            return;
+        }
+
+        const paraPorView = document.getElementById('view-para-por');
+        if (paraPorView && !paraPorView.classList.contains('hidden')) {
+            crossfadeViews(paraPorView, UI.modeSelect, () => {
+                setSelectorNavState('mode');
+            });
             return;
         }
 
@@ -307,18 +635,14 @@ function setupEventListeners() {
         AppState.words = [];
         AppState.currentWordIndex = null;
         AppState.practiceWordIndex = null;
-        UI.nav.classList.add('hidden');
         UI.subNav.classList.add('hidden');
-        document.querySelectorAll('.view').forEach(v => {
-            v.classList.add('hidden');
-            v.classList.remove('fade-in');
+
+        const currentView = document.querySelector('.view:not(.hidden)');
+        crossfadeViews(currentView, UI.landing, () => {
+            AppState.vocabPage = 0;
+            setSelectorNavState('landing');
+            renderLandingPage();
         });
-        UI.mainContainer.classList.remove('wide');
-        renderLandingPage();
-        UI.landing.classList.remove('hidden');
-        
-        void UI.landing.offsetWidth;
-        UI.landing.classList.add('fade-in');
     });
 
     document.getElementById('random-voice').addEventListener('change', (e) => {
@@ -424,13 +748,6 @@ function setupEventListeners() {
         saveData();
     });
 
-    document.getElementById('practice-anim-speed').addEventListener('input', (e) => {
-        const val = parseFloat(e.target.value);
-        AppState.settings.practiceAnimSpeed = val;
-        document.getElementById('practice-anim-speed-val').innerText = val + 'x';
-    });
-    document.getElementById('practice-anim-speed').addEventListener('change', saveData);
-
     document.getElementById('rec-progress-speed').addEventListener('click', () => {
         const val = 1500;
         document.getElementById('progress-speed').value = val;
@@ -447,6 +764,14 @@ function setupEventListeners() {
     });
     document.getElementById('wordlist-cols').addEventListener('change', saveData);
 
+    document.getElementById('mode-grid-size').addEventListener('input', (e) => {
+        const val = parseInt(e.target.value);
+        AppState.settings.modeGridSize = val;
+        document.getElementById('mode-grid-size-val').innerText = `${val}px`;
+        document.documentElement.style.setProperty('--mode-grid-max', `${val}px`);
+    });
+    document.getElementById('mode-grid-size').addEventListener('change', saveData);
+
     document.getElementById('anim-speed').addEventListener('input', (e) => {
         const val = parseFloat(e.target.value);
         AppState.settings.animSpeed = val;
@@ -456,7 +781,7 @@ function setupEventListeners() {
     document.getElementById('anim-speed').addEventListener('change', saveData);
 
     document.getElementById('rec-anim-speed').addEventListener('click', () => {
-        const val = 1.0;
+        const val = 1.2;
         document.getElementById('anim-speed').value = val;
         AppState.settings.animSpeed = val;
         document.getElementById('anim-speed-val').innerText = val + 'x';
@@ -490,6 +815,15 @@ function setupEventListeners() {
         AppState.settings.wordlistCols = val;
         document.getElementById('wordlist-cols-val').innerText = val;
         document.documentElement.style.setProperty('--wordlist-cols', val);
+        saveData();
+    });
+
+    document.getElementById('rec-mode-grid-size').addEventListener('click', () => {
+        const val = 920;
+        document.getElementById('mode-grid-size').value = val;
+        AppState.settings.modeGridSize = val;
+        document.getElementById('mode-grid-size-val').innerText = `${val}px`;
+        document.documentElement.style.setProperty('--mode-grid-max', `${val}px`);
         saveData();
     });
 
@@ -781,8 +1115,10 @@ function loadGlobalData() {
                 if (!AppState.settings.practiceDelay) AppState.settings.practiceDelay = 1500;
                 if (!AppState.settings.practiceChoices) AppState.settings.practiceChoices = 9;
                 if (!AppState.settings.practiceAnimSpeed) AppState.settings.practiceAnimSpeed = 1;
+                if (!AppState.settings.modeGridSize) AppState.settings.modeGridSize = 920;
                 if (!AppState.settings.wordlistCols) AppState.settings.wordlistCols = 6;
-                if (!AppState.settings.animSpeed) AppState.settings.animSpeed = 1;
+                if (!AppState.settings.animSpeed) AppState.settings.animSpeed = 1.2;
+                AppState.settings.animPreset = '1';
                 if (AppState.settings.voiceVolume === undefined) AppState.settings.voiceVolume = 1;
                 if (AppState.settings.autoDownload === undefined) AppState.settings.autoDownload = true;
                 if (!AppState.settings.autoDownloadFrequency) AppState.settings.autoDownloadFrequency = 10;
@@ -865,17 +1201,18 @@ function loadGlobalData() {
                     document.getElementById('practice-choices-val').innerText = AppState.settings.practiceChoices;
                 }
 
-                const pracAnimInput = document.getElementById('practice-anim-speed');
-                if(pracAnimInput) {
-                    pracAnimInput.value = AppState.settings.practiceAnimSpeed;
-                    document.getElementById('practice-anim-speed-val').innerText = AppState.settings.practiceAnimSpeed + 'x';
-                }
-
                 const colsInput = document.getElementById('wordlist-cols');
                 if(colsInput) {
                     colsInput.value = AppState.settings.wordlistCols;
                     document.getElementById('wordlist-cols-val').innerText = AppState.settings.wordlistCols;
                     document.documentElement.style.setProperty('--wordlist-cols', AppState.settings.wordlistCols);
+                }
+
+                const modeGridSizeInput = document.getElementById('mode-grid-size');
+                if (modeGridSizeInput) {
+                    modeGridSizeInput.value = AppState.settings.modeGridSize;
+                    document.getElementById('mode-grid-size-val').innerText = `${AppState.settings.modeGridSize}px`;
+                    document.documentElement.style.setProperty('--mode-grid-max', `${AppState.settings.modeGridSize}px`);
                 }
 
                 const animInput = document.getElementById('anim-speed');
@@ -884,6 +1221,8 @@ function loadGlobalData() {
                     document.getElementById('anim-speed-val').innerText = AppState.settings.animSpeed + 'x';
                     document.documentElement.style.setProperty('--anim-speed', AppState.settings.animSpeed);
                 }
+
+                document.documentElement.dataset.animPreset = '1';
 
                 const volInput = document.getElementById('voice-volume');
                 if(volInput) {
@@ -1126,25 +1465,273 @@ function handleThemeCycle() {
 }
 
 /* --- VIEW LOGIC --- */
+
+function crossfadeViews(fromView, toView, beforeShow = null) {
+    const duration = getViewFadeDuration();
+    if (fromView) {
+        fromView.classList.remove('fade-in');
+    }
+
+    setTimeout(() => {
+        if (fromView) {
+            fromView.classList.add('hidden');
+        }
+        if (beforeShow) {
+            beforeShow();
+        }
+        toView.classList.remove('hidden');
+        void toView.offsetWidth;
+        toView.classList.add('fade-in');
+    }, duration);
+}
+
+function setSelectorNavState(state) {
+    const leftGroup = document.querySelector('.nav-group.left');
+    const centerGroup = document.querySelector('.nav-group.center');
+    const rightGroup = document.querySelector('.nav-group.right');
+    const backBtn = document.getElementById('global-back-btn');
+    const navSelectorTitle = document.getElementById('nav-selector-title');
+    const tabButtons = document.querySelectorAll('.tab-btn');
+
+    const setCenteredTitle = (titleText) => {
+        tabButtons.forEach((btn) => {
+            btn.style.display = 'none';
+        });
+        if (navSelectorTitle) {
+            navSelectorTitle.textContent = titleText;
+            navSelectorTitle.classList.remove('hidden');
+        }
+    };
+
+    const seTabBar = document.querySelector('#view-ser-estar .se-tab-bar');
+    const ppTabBar = document.querySelector('#view-para-por .pp-tab-bar');
+
+    const setMainTabConfig = (firstLabel, firstTarget, secondLabel, secondTarget) => {
+        if (tabButtons[0]) {
+            tabButtons[0].textContent = firstLabel;
+            tabButtons[0].dataset.target = firstTarget;
+        }
+        if (tabButtons[1]) {
+            tabButtons[1].textContent = secondLabel;
+            tabButtons[1].dataset.target = secondTarget;
+        }
+    };
+
+    const showTabs = () => {
+        setMainTabConfig('Wordlist', 'view-wordlist', 'Competitive', 'view-competitive');
+        tabButtons.forEach((btn) => {
+            btn.style.display = '';
+        });
+        if (navSelectorTitle) {
+            navSelectorTitle.classList.add('hidden');
+            navSelectorTitle.textContent = '';
+        }
+    };
+
+    UI.nav.classList.remove('hidden');
+    UI.subNav.classList.add('hidden');
+
+    if (state === 'mode') {
+        if (seTabBar) seTabBar.classList.remove('hidden');
+        if (ppTabBar) ppTabBar.classList.remove('hidden');
+        UI.nav.classList.remove('mode-nav-muted');
+        if (leftGroup) leftGroup.style.display = '';
+        if (leftGroup) leftGroup.style.visibility = 'hidden';
+        if (centerGroup) centerGroup.style.display = '';
+        if (rightGroup) rightGroup.style.display = '';
+        if (rightGroup) rightGroup.style.visibility = 'hidden';
+        setCenteredTitle('Choose Your Topic');
+        if (backBtn) {
+            backBtn.textContent = '←';
+            backBtn.classList.remove('mode-placeholder');
+            backBtn.disabled = false;
+        }
+        return;
+    }
+
+    if (state === 'landing') {
+        if (seTabBar) seTabBar.classList.remove('hidden');
+        if (ppTabBar) ppTabBar.classList.remove('hidden');
+        UI.nav.classList.remove('mode-nav-muted');
+        if (leftGroup) leftGroup.style.display = '';
+        if (leftGroup) leftGroup.style.visibility = '';
+        if (centerGroup) centerGroup.style.display = '';
+        if (rightGroup) rightGroup.style.display = '';
+        if (rightGroup) rightGroup.style.visibility = 'hidden';
+        setCenteredTitle('Choose Your Vocabulary');
+        if (backBtn) {
+            backBtn.textContent = '←';
+            backBtn.classList.remove('mode-placeholder');
+            backBtn.disabled = false;
+        }
+        return;
+    }
+
+    if (state === 'ser-estar') {
+        UI.nav.classList.remove('mode-nav-muted');
+        if (leftGroup) leftGroup.style.display = '';
+        if (leftGroup) leftGroup.style.visibility = '';
+        if (centerGroup) centerGroup.style.display = '';
+        if (rightGroup) rightGroup.style.display = '';
+        if (rightGroup) rightGroup.style.visibility = '';
+
+        setMainTabConfig('Practice', 'se-practice', 'Competitive', 'se-competitive');
+        tabButtons.forEach((btn) => {
+            btn.style.display = '';
+            btn.classList.remove('active');
+        });
+        if (tabButtons[0]) tabButtons[0].classList.add('active');
+        if (navSelectorTitle) {
+            navSelectorTitle.classList.add('hidden');
+            navSelectorTitle.textContent = '';
+        }
+        setSerEstarPanel('se-practice');
+
+        if (seTabBar) seTabBar.classList.add('hidden');
+        if (ppTabBar) ppTabBar.classList.remove('hidden');
+        if (backBtn) {
+            backBtn.textContent = '←';
+            backBtn.classList.remove('mode-placeholder');
+            backBtn.disabled = false;
+        }
+        return;
+    }
+
+    if (state === 'para-por') {
+        UI.nav.classList.remove('mode-nav-muted');
+        if (leftGroup) leftGroup.style.display = '';
+        if (leftGroup) leftGroup.style.visibility = '';
+        if (centerGroup) centerGroup.style.display = '';
+        if (rightGroup) rightGroup.style.display = '';
+        if (rightGroup) rightGroup.style.visibility = '';
+
+        setMainTabConfig('Practice', 'pp-practice', 'Competitive', 'pp-competitive');
+        tabButtons.forEach((btn) => {
+            btn.style.display = '';
+            btn.classList.remove('active');
+        });
+        if (tabButtons[0]) tabButtons[0].classList.add('active');
+        if (navSelectorTitle) {
+            navSelectorTitle.classList.add('hidden');
+            navSelectorTitle.textContent = '';
+        }
+        setParaPorPanel('pp-practice');
+
+        if (seTabBar) seTabBar.classList.remove('hidden');
+        if (ppTabBar) ppTabBar.classList.add('hidden');
+        if (backBtn) {
+            backBtn.textContent = '←';
+            backBtn.classList.remove('mode-placeholder');
+            backBtn.disabled = false;
+        }
+        return;
+    }
+
+    if (seTabBar) seTabBar.classList.remove('hidden');
+    if (ppTabBar) ppTabBar.classList.remove('hidden');
+
+    UI.nav.classList.remove('mode-nav-muted');
+    if (leftGroup) leftGroup.style.display = '';
+    if (leftGroup) leftGroup.style.visibility = '';
+    if (centerGroup) centerGroup.style.display = '';
+    if (rightGroup) rightGroup.style.display = '';
+    if (rightGroup) rightGroup.style.visibility = '';
+    showTabs();
+    if (backBtn) {
+        backBtn.textContent = '←';
+        backBtn.classList.remove('mode-placeholder');
+        backBtn.disabled = false;
+    }
+}
+
+function renderModeSelect() {
+    UI.modeGrid.innerHTML = '';
+    const modesPage0 = [
+        { name: '📖 Vocabulary', active: true, action: 'vocabulary' },
+        { name: '🧭 SER or ESTAR', active: true, action: 'ser-estar' },
+        { name: '➡️ PARA or POR', active: true, action: 'para-por' }
+    ];
+    while (modesPage0.length < 9) {
+        modesPage0.push({ name: '', active: false });
+    }
+
+    const modesPage1 = Array.from({ length: 9 }, () => ({ name: '', active: false }));
+    const modes = AppState.modePage === 0 ? modesPage0 : modesPage1;
+
+    modes.forEach(mode => {
+        const btn = document.createElement('button');
+        btn.className = 'mode-btn';
+        btn.innerHTML = `<span class="mode-label">${mode.name}</span>`;
+        if (!mode.active) {
+            btn.disabled = true;
+        } else {
+            btn.onclick = () => {
+                if (mode.action === 'vocabulary') {
+                    crossfadeViews(UI.modeSelect, UI.landing, () => {
+                        AppState.vocabPage = 0;
+                        setSelectorNavState('landing');
+                        renderLandingPage();
+                    });
+                } else if (mode.action === 'ser-estar') {
+                    crossfadeViews(UI.modeSelect, document.getElementById('view-ser-estar'), () => {
+                        UI.mainContainer.classList.add('wide');
+                        setSelectorNavState('ser-estar');
+                    });
+                } else if (mode.action === 'para-por') {
+                    crossfadeViews(UI.modeSelect, document.getElementById('view-para-por'), () => {
+                        UI.mainContainer.classList.add('wide');
+                        setSelectorNavState('para-por');
+                    });
+                }
+            };
+        }
+        UI.modeGrid.appendChild(btn);
+    });
+
+    if (UI.modePagePrev) UI.modePagePrev.disabled = AppState.modePage === 0;
+    if (UI.modePageNext) UI.modePageNext.disabled = AppState.modePage === 1;
+}
+
 function renderLandingPage() {
     UI.bundleGrid.innerHTML = '';
     const savedJSON = localStorage.getItem('wordBundleStats');
     const savedData = savedJSON ? JSON.parse(savedJSON) : {};
+    const selectableBundles = AppState.vocabPage === 0 ? getAvailableBundles().slice(0, 6) : [];
 
-    getAvailableBundles().forEach((bundle, index) => {
+    selectableBundles.forEach((bundle, index) => {
         const btn = document.createElement('button');
         btn.className = 'bundle-btn';
         if (bundle) {
+            const isCustomBundle = bundle.id === getCustomVocabBundleId();
+            if (isCustomBundle) {
+                btn.classList.add('bundle-btn-custom');
+                if (AppState.isCustomSelectionMode) {
+                    btn.classList.add('bundle-btn-custom-armed');
+                }
+            }
+
+            if (AppState.isCustomSelectionMode && !isCustomBundle && getBaseVocabBundleIds().includes(bundle.id)) {
+                btn.classList.add('bundle-btn-selectable');
+                if (isBundleSelectedForCustom(bundle.id)) {
+                    btn.classList.add('bundle-btn-selected');
+                } else {
+                    btn.classList.add('bundle-btn-unselected');
+                }
+            }
+            if (!isCustomBundle) {
+                btn.classList.add('bundle-btn-static-stats');
+            }
+
             // Calculate Stats
-            const freshWords = parseBundleData(bundle.data);
+            const runtimeData = getRuntimeBundleData(bundle);
+            const freshWords = runtimeData ? parseBundleData(runtimeData) : [];
             let words = freshWords;
             
             if (savedData.bundles && savedData.bundles[bundle.id]) {
                 const savedWords = savedData.bundles[bundle.id];
-                words = freshWords.map(fw => {
-                    const sw = savedWords.find(w => w.en === fw.en);
-                    return sw ? { ...fw, ...sw } : fw;
-                });
+                words = freshWords.length > 0
+                    ? mergeSavedWords(freshWords, savedWords)
+                    : savedWords;
             }
 
             const total = words.length;
@@ -1153,93 +1740,173 @@ function renderLandingPage() {
             const silver = words.filter(w => w.streak >= 10 && w.streak < 15).length;
             const gold = words.filter(w => w.streak >= 15).length;
 
-            const pctEncounters = ((encounters / total) * 100).toFixed(1);
-            const pctBronze = ((bronze / total) * 100).toFixed(1);
-            const pctSilver = ((silver / total) * 100).toFixed(1);
-            const pctGold = ((gold / total) * 100).toFixed(1);
+            const pctEncounters = total > 0 ? ((encounters / total) * 100).toFixed(1) : '0.0';
+            const pctBronze = total > 0 ? ((bronze / total) * 100).toFixed(1) : '0.0';
+            const pctSilver = total > 0 ? ((silver / total) * 100).toFixed(1) : '0.0';
+            const pctGold = total > 0 ? ((gold / total) * 100).toFixed(1) : '0.0';
 
-            btn.innerHTML = `
-                <span class="bundle-name">${bundle.name}</span>
-                <div class="bundle-stats">
-                    <div class="bundle-stat-row">
-                        <span class="bundle-stat-label">Seen</span>
-                        <div class="bundle-stat-track">
-                            <div class="bundle-stat-fill" style="width: ${pctEncounters}%; background-color: var(--primary);"></div>
+            const customSelectionLine = isCustomBundle
+                ? `<div class="bundle-custom-line">Selected: ${getCustomSelectedBundleIds().length}/${getBaseVocabBundleIds().length}</div>`
+                : '';
+            const customModeLine = isCustomBundle && AppState.isCustomSelectionMode
+                ? `<div class="bundle-custom-line">Choose bundles, then Continue</div>`
+                : '';
+            const statsTitleLine = !isCustomBundle
+                ? `<div class="bundle-stats-title">${bundle.name}</div>`
+                : '';
+
+            const customActions = isCustomBundle && AppState.isCustomSelectionMode
+                ? `<div class="bundle-custom-actions">
+                    <button type="button" class="bundle-custom-action custom-action-continue">Continue</button>
+                    <button type="button" class="bundle-custom-action custom-action-cancel">Cancel</button>
+                </div>`
+                : '';
+
+            if (isCustomBundle) {
+                btn.innerHTML = `
+                    <span class="bundle-name">${bundle.name}</span>
+                    ${customSelectionLine}
+                    ${customModeLine}
+                    ${customActions}`;
+            } else {
+                btn.innerHTML = `
+                    <div class="bundle-stats">
+                        ${statsTitleLine}
+                        <div class="bundle-stats-body">
+                            <div class="bundle-stat-row">
+                                <span class="bundle-stat-label">Seen</span>
+                                <div class="bundle-stat-track">
+                                    <div class="bundle-stat-fill" style="width: ${pctEncounters}%; background-color: var(--primary);"></div>
+                                </div>
+                                <span class="bundle-stat-val">${encounters}/${total}</span>
+                            </div>
+                            <div class="bundle-stat-row">
+                                <span class="bundle-stat-label">Bronze</span>
+                                <div class="bundle-stat-track">
+                                    <div class="bundle-stat-fill" style="width: ${pctBronze}%; background-color: #ed8936;"></div>
+                                </div>
+                                <span class="bundle-stat-val">${bronze}/${total}</span>
+                            </div>
+                            <div class="bundle-stat-row">
+                                <span class="bundle-stat-label">Silver</span>
+                                <div class="bundle-stat-track">
+                                    <div class="bundle-stat-fill" style="width: ${pctSilver}%; background-color: #a0aec0;"></div>
+                                </div>
+                                <span class="bundle-stat-val">${silver}/${total}</span>
+                            </div>
+                            <div class="bundle-stat-row">
+                                <span class="bundle-stat-label">Gold</span>
+                                <div class="bundle-stat-track">
+                                    <div class="bundle-stat-fill" style="width: ${pctGold}%; background-color: #ecc94b;"></div>
+                                </div>
+                                <span class="bundle-stat-val">${gold}/${total}</span>
+                            </div>
                         </div>
-                        <span class="bundle-stat-val">${encounters}/${total}</span>
-                    </div>
-                    <div class="bundle-stat-row">
-                        <span class="bundle-stat-label">Bronze</span>
-                        <div class="bundle-stat-track">
-                            <div class="bundle-stat-fill" style="width: ${pctBronze}%; background-color: #ed8936;"></div>
-                        </div>
-                        <span class="bundle-stat-val">${bronze}/${total}</span>
-                    </div>
-                    <div class="bundle-stat-row">
-                        <span class="bundle-stat-label">Silver</span>
-                        <div class="bundle-stat-track">
-                            <div class="bundle-stat-fill" style="width: ${pctSilver}%; background-color: #a0aec0;"></div>
-                        </div>
-                        <span class="bundle-stat-val">${silver}/${total}</span>
-                    </div>
-                    <div class="bundle-stat-row">
-                        <span class="bundle-stat-label">Gold</span>
-                        <div class="bundle-stat-track">
-                            <div class="bundle-stat-fill" style="width: ${pctGold}%; background-color: #ecc94b;"></div>
-                        </div>
-                        <span class="bundle-stat-val">${gold}/${total}</span>
-                    </div>
-                </div>`;
-            btn.onclick = () => loadBundle(bundle);
+                    </div>`;
+            }
+
+            if (isCustomBundle && AppState.isCustomSelectionMode) {
+                const continueBtn = btn.querySelector('.custom-action-continue');
+                const cancelBtn = btn.querySelector('.custom-action-cancel');
+
+                if (continueBtn) {
+                    continueBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (getCustomSelectedBundleIds().length === 0) {
+                            alert('Select at least one bundle for Custom before continuing.');
+                            return;
+                        }
+                        AppState.isCustomSelectionMode = false;
+                        loadBundle(getRuntimeBundle(bundle));
+                    });
+                }
+
+                if (cancelBtn) {
+                    cancelBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        AppState.isCustomSelectionMode = false;
+                        AppState.customSelectedBundleIds = [];
+                        renderLandingPage();
+                    });
+                }
+            }
+
+            btn.onclick = () => {
+                if (isCustomBundle) {
+                    if (!AppState.isCustomSelectionMode) {
+                        AppState.isCustomSelectionMode = true;
+                        renderLandingPage();
+                        return;
+                    }
+                    // In selection mode, Custom card actions are handled by Continue/Cancel buttons.
+                    return;
+                }
+
+                if (AppState.isCustomSelectionMode && getBaseVocabBundleIds().includes(bundle.id)) {
+                    toggleCustomBundleSelection(bundle.id);
+                    renderLandingPage();
+                    return;
+                }
+
+                loadBundle(bundle);
+            };
         } else {
-            btn.innerText = "Bundle Unavailable";
+            btn.innerText = "Vocabulary Unavailable";
             btn.disabled = true;
         }
         UI.bundleGrid.appendChild(btn);
     });
+
+    // Always show 9 slots (3x3): page 1 is all placeholders
+    const totalSlots = 9;
+    for (let i = selectableBundles.length; i < totalSlots; i++) {
+        const btn = document.createElement('button');
+        btn.className = 'bundle-btn';
+        btn.innerText = '';
+        btn.disabled = true;
+        UI.bundleGrid.appendChild(btn);
+    }
+
+    if (UI.vocabPagePrev) UI.vocabPagePrev.disabled = AppState.vocabPage === 0;
+    if (UI.vocabPageNext) UI.vocabPageNext.disabled = AppState.vocabPage === 1;
 }
 
 function loadBundle(bundle) {
     AppState.currentBundleId = bundle.id;
-    let freshWords = parseBundleData(bundle.data);
+    const runtimeBundle = getRuntimeBundle(bundle);
+    let freshWords = runtimeBundle.data ? parseBundleData(runtimeBundle.data) : [];
+    if (bundle.id === getCustomVocabBundleId() && freshWords.length === 0) {
+        alert('Custom has no selected bundles. Click Custom, choose bundles, then click Custom again.');
+        return;
+    }
     const savedJSON = localStorage.getItem('wordBundleStats');
     if (savedJSON) {
         try {
             const savedData = JSON.parse(savedJSON);
             if (savedData.bundles && savedData.bundles[bundle.id]) {
                 const savedWords = savedData.bundles[bundle.id];
-                freshWords = freshWords.map(freshWord => {
-                    const savedWord = savedWords.find(sw => sw.en === freshWord.en);
-                    if (savedWord) {
-                        return {
-                            ...freshWord, 
-                            attempts: savedWord.attempts || 0,
-                            streak: savedWord.streak || 0,
-                            wrong: savedWord.wrong || 0,
-                            correct: savedWord.correct || 0,
-                            skip: savedWord.skip || 0,
-                            weight: savedWord.weight || 100,
-                            p_attempts: savedWord.p_attempts || 0,
-                            p_streak: savedWord.p_streak || 0,
-                            p_wrong: savedWord.p_wrong || 0,
-                            p_correct: savedWord.p_correct || 0,
-                            p_skip: savedWord.p_skip || 0
-                        };
-                    }
-                    return freshWord;
-                });
+                freshWords = freshWords.length > 0 ? mergeSavedWords(freshWords, savedWords) : savedWords;
             }
         } catch (e) { console.warn("Failed to merge saved stats"); }
     }
 
     AppState.words = freshWords;
+
+    // Keep selector visible while fading out so resize can happen between fades.
     UI.landing.classList.remove('fade-in');
-    UI.landing.classList.add('hidden');
-    UI.nav.classList.remove('hidden');
-    renderWordlist();
-    renderStats();
-    switchView('view-wordlist');
-    loadNextWord();
+    setTimeout(() => {
+        UI.landing.classList.add('hidden');
+        setSelectorNavState('learning');
+        UI.nav.classList.remove('nav-fade-in');
+        void UI.nav.offsetWidth;
+        UI.nav.classList.add('nav-fade-in');
+        renderWordlist();
+        renderStats();
+        switchView('view-wordlist');
+        loadNextWord();
+    }, getViewFadeDuration());
 }
 
 function parseBundleData(textData) {
@@ -1283,7 +1950,7 @@ function switchView(viewId) {
 
     document.querySelectorAll('.view').forEach(v => {
         v.classList.add('hidden');
-        if (v.id === 'view-stats' || v.id === 'view-wordlist' || v.id === 'view-competitive' || v.id === 'view-practice' || v.id === 'view-landing' || v.id === 'view-practice-stats') {
+        if (v.id === 'view-stats' || v.id === 'view-wordlist' || v.id === 'view-competitive' || v.id === 'view-practice' || v.id === 'view-landing' || v.id === 'view-practice-stats' || v.id === 'view-mode-select' || v.id === 'view-welcome' || v.id === 'view-ser-estar' || v.id === 'view-para-por') {
             v.classList.remove('fade-in');
             v.style.transition = '';
         }
@@ -1343,7 +2010,7 @@ function switchView(viewId) {
             view.classList.add('fade-in');
         } else {
             // Wait for container expansion animation (0.6s) before fading in content
-            const delay = 600 / (AppState.settings.animSpeed || 1);
+            const delay = getViewResizeDuration();
             AppState.viewTransitionTimer = setTimeout(() => {
                 view.classList.add('fade-in');
                 AppState.viewTransitionTimer = null;
@@ -1363,7 +2030,7 @@ function switchView(viewId) {
 
         if (viewId === 'view-competitive') {
             if (wasWide) {
-                const delay = 600 / (AppState.settings.animSpeed || 1);
+                const delay = getViewResizeDuration();
                 AppState.viewTransitionTimer = setTimeout(() => {
                     showView();
                     AppState.viewTransitionTimer = null;
@@ -1465,8 +2132,10 @@ function startPracticeMode(direction) {
     updatePracticeProgress();
     
     // Entry Animation
-    const speed = AppState.settings.practiceAnimSpeed || 1;
-    const duration = 0.4 / speed;
+    const speed = getAnimationSpeed();
+    const durMult = getAnimDurMult();
+    const easing = getAnimEasing();
+    const duration = 0.4 * durMult / speed;
 
     const questionArea = document.getElementById('practice-question-area');
     const grid = document.getElementById('practice-options-grid');
@@ -1477,15 +2146,15 @@ function startPracticeMode(direction) {
     grid.style.transform = 'translateY(20px)';
     
     requestAnimationFrame(() => {
-        questionArea.style.transition = `opacity ${duration}s ease, transform ${duration}s ease`;
+        questionArea.style.transition = `opacity ${duration}s ${easing}, transform ${duration}s ${easing}`;
         questionArea.style.opacity = '1';
         questionArea.style.transform = 'translateY(0)';
         
         setTimeout(() => {
-            grid.style.transition = `opacity ${duration}s ease, transform ${duration}s ease`;
+            grid.style.transition = `opacity ${duration}s ${easing}, transform ${duration}s ${easing}`;
             grid.style.opacity = '1';
             grid.style.transform = 'translateY(0)';
-        }, 200 / speed);
+        }, 200 * durMult / speed);
     });
 
     renderPracticeGrid();
@@ -1639,10 +2308,12 @@ function clearPracticeProgress() {
 
 function shufflePracticeGrid() {
     const grid = UI.practiceGrid;
-    const speed = AppState.settings.practiceAnimSpeed || 1;
-    const flyInDuration = 0.4 / speed;
-    const flyOutDuration = 0.3 / speed;
-    const rowDelay = 100 / speed;
+    const speed = getAnimationSpeed();
+    const durMult = getAnimDurMult();
+    const easing = getAnimEasing();
+    const flyInDuration = 0.4 * durMult / speed;
+    const flyOutDuration = 0.3 * durMult / speed;
+    const rowDelay = 100 * durMult / speed;
 
     const children = Array.from(grid.children);
     if (children.length === 0) return;
@@ -1665,7 +2336,7 @@ function shufflePracticeGrid() {
         const tx = gridCenterX - childCenterX;
         const ty = gridCenterY - childCenterY;
 
-        child.style.transition = `transform ${flyInDuration}s ease-in, opacity ${flyInDuration}s ease-in`;
+        child.style.transition = `transform ${flyInDuration}s ${easing}, opacity ${flyInDuration}s ${easing}`;
         child.style.transform = `translate(${tx}px, ${ty}px) scale(0.1)`;
         child.style.opacity = '0';
         child.style.zIndex = '10';
@@ -1729,7 +2400,7 @@ function shufflePracticeGrid() {
             const delay = rIndex * rowDelay;
             rowChildren.forEach(child => {
                 setTimeout(() => {
-                    child.style.transition = `transform ${flyOutDuration}s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity ${flyOutDuration}s ease`;
+                    child.style.transition = `transform ${flyOutDuration}s ${easing}, opacity ${flyOutDuration}s ${easing}`;
                     child.style.transform = 'scale(1)';
                     child.style.opacity = '1';
                     child.style.zIndex = '';
@@ -1822,7 +2493,9 @@ function renderPracticeGrid() {
         div.addEventListener('click', () => {
             if (AppState.practiceMatched.has(index)) {
                 // Flipcard logic
-                div.style.transition = 'transform 0.3s ease-in';
+                const flipDur = getScaledDuration(300);
+                const flipEasing = getAnimEasing();
+                div.style.transition = `transform ${flipDur/1000}s ${flipEasing}`;
                 div.style.transform = 'perspective(600px) rotateY(90deg)';
                 
                 setTimeout(() => {
@@ -1839,14 +2512,14 @@ function renderPracticeGrid() {
                     div.style.transform = 'perspective(600px) rotateY(-90deg)';
                     void div.offsetWidth;
                     
-                    div.style.transition = 'transform 0.3s ease-out';
+                    div.style.transition = `transform ${flipDur/1000}s ${flipEasing}`;
                     div.style.transform = 'perspective(600px) rotateY(0deg)';
                     
                     setTimeout(() => {
                         div.style.transition = '';
                         div.style.transform = '';
-                    }, 300);
-                }, 300);
+                    }, flipDur);
+                }, flipDur);
                 return;
             }
 
@@ -2172,6 +2845,7 @@ function skipWord() {
     AppState.lastAction = 'skip';
     addToHistory(AppState.currentWordIndex, 'skip', word.streak);
     updateWordWeight(word);
+    syncCompetitiveStatsToMirrorBundles(word);
 
     saveData();
     sessionActionCount++;
@@ -2337,6 +3011,7 @@ function handleCorrect(word, target) {
     }
 
     updateWordWeight(word);
+    syncCompetitiveStatsToMirrorBundles(word);
     addToHistory(AppState.words.indexOf(word), 'correct', word.streak - 1);
     UI.competitive.classList.add('correct-state');
     sessionActionCount++;
@@ -2352,6 +3027,7 @@ function handleIncorrect(word, target) {
     word.streak = 0;
     addToHistory(AppState.words.indexOf(word), 'wrong', previousStreak);
     updateWordWeight(word);
+    syncCompetitiveStatsToMirrorBundles(word);
     UI.competitive.classList.add('wrong-state');
     UI.questionWord.innerText = `${target}`;
     sessionActionCount++;
@@ -2410,6 +3086,7 @@ function undoAction() {
     if (popped) AppState.redoHistory = [popped];
     updateSettingsUndoLabel();
     updateWordWeight(word);
+    syncCompetitiveStatsToMirrorBundles(word);
 
     saveData();
     AppState.isLocked = false;
@@ -2991,4 +3668,28 @@ function playSuccessSound() {
     
     osc.start();
     osc.stop(ctx.currentTime + 0.3);
+}
+
+function swipeGrid(grid, direction, onSwap) {
+    if (!grid || grid.dataset.animating === '1') return;
+    const duration = getScaledDuration(260);
+    const outClass = direction === 'left' ? 'grid-swipe-out-left' : 'grid-swipe-out-right';
+    const inClass = direction === 'left' ? 'grid-swipe-in-from-right' : 'grid-swipe-in-from-left';
+
+    grid.dataset.animating = '1';
+    grid.style.setProperty('--grid-swipe-duration', `${duration}ms`);
+    grid.classList.remove('grid-swipe-in-from-right', 'grid-swipe-in-from-left');
+    grid.classList.add(outClass);
+
+    setTimeout(() => {
+        onSwap();
+        grid.classList.remove(outClass);
+        void grid.offsetWidth;
+        grid.classList.add(inClass);
+
+        setTimeout(() => {
+            grid.classList.remove(inClass);
+            grid.dataset.animating = '0';
+        }, duration);
+    }, duration);
 }

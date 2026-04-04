@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Word Bundles</title>
+    <title>Spanish Learning Tool</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>">
 </head>
@@ -31,13 +31,13 @@
             </div>
             
             <div class="nav-group center">
+                <div id="nav-selector-title" class="nav-selector-title hidden"></div>
                 <button class="tab-btn" data-target="view-wordlist">Wordlist</button>
-                <button class="tab-btn" data-target="view-practice">Practice</button>
                 <button class="tab-btn" data-target="view-competitive">Competitive</button>
             </div>
 
             <div class="nav-group right">
-                <button id="settings-btn" class="nav-icon-btn">⚙️</button>
+                <button id="settings-btn" class="nav-icon-btn settings-toggle-btn">⚙️</button>
             </div>
         </nav>
 
@@ -46,10 +46,32 @@
             <button id="btn-sub-stats" class="sub-tab-btn" data-target="view-stats">Statistics</button>
         </nav>
 
-        <section id="view-landing" class="view">
-            <h1>Select a Word Bundle</h1>
-            <div class="bundle-grid" id="bundle-grid">
+        <section id="view-welcome" class="view">
+            <div class="welcome-card">
+                <div class="welcome-head">
+                    <h1>Spanish Learning Tool</h1>
+                    <p>Latin American (Panamanian) Spanish Learning </p>
                 </div>
+                <div class="welcome-cta">
+                    <button id="btn-continue-guest" class="welcome-btn">Continue as guest</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-mode-select" class="view hidden">
+            <div class="pager-layout">
+                <button id="mode-page-prev" class="pager-btn">&#8592;</button>
+                <div class="mode-grid" id="mode-grid"></div>
+                <button id="mode-page-next" class="pager-btn">&#8594;</button>
+            </div>
+        </section>
+
+        <section id="view-landing" class="view hidden">
+            <div class="pager-layout">
+                <button id="vocab-page-prev" class="pager-btn">&#8592;</button>
+                <div class="bundle-grid" id="bundle-grid"></div>
+                <button id="vocab-page-next" class="pager-btn">&#8594;</button>
+            </div>
         </section>
 
         <section id="view-wordlist" class="view hidden">
@@ -192,6 +214,276 @@
             </div>
         </section>
 
+        <section id="view-ser-estar" class="view hidden">
+            <div class="se-tab-bar">
+                <button class="se-tab-btn active" data-panel="se-practice">Practice</button>
+                <button class="se-tab-btn" data-panel="se-competitive">Competitive</button>
+            </div>
+
+            <div id="se-practice" class="se-panel">
+                <div class="se-content-scroll">
+                    <div class="se-acronym-cards">
+
+                        <div class="se-card">
+                            <div class="se-card-header ser-header">
+                                <span class="se-card-verb">SER</span>
+                                <span class="se-card-mnemonic">D.O.C.T.O.R.</span>
+                            </div>
+                            <p class="se-card-desc">Use <strong>SER</strong> for permanent or defining characteristics. Remember the <strong>DOCTOR</strong> acronym:</p>
+                            <ul class="se-acronym-list">
+                                <li>
+                                    <span class="se-letter ser-letter">D</span>
+                                    <div class="se-letter-content">
+                                        <strong>Descriptions</strong>
+                                        <span>Physical appearance, personality, nationalities, and religions</span>
+                                        <em>Ella es alta y simpática. — She is tall and friendly.</em>
+                                    </div>
+                                </li>
+                                <li>
+                                    <span class="se-letter ser-letter">O</span>
+                                    <div class="se-letter-content">
+                                        <strong>Occupations</strong>
+                                        <span>Professions and roles a person holds</span>
+                                        <em>Él es médico. — He is a doctor.</em>
+                                    </div>
+                                </li>
+                                <li>
+                                    <span class="se-letter ser-letter">C</span>
+                                    <div class="se-letter-content">
+                                        <strong>Characteristics</strong>
+                                        <span>Inherent qualities or properties of an object</span>
+                                        <em>La mesa es de madera. — The table is made of wood.</em>
+                                    </div>
+                                </li>
+                                <li>
+                                    <span class="se-letter ser-letter">T</span>
+                                    <div class="se-letter-content">
+                                        <strong>Time</strong>
+                                        <span>Telling time, dates, and days of the week</span>
+                                        <em>Son las tres de la tarde. — It is three in the afternoon.</em>
+                                    </div>
+                                </li>
+                                <li>
+                                    <span class="se-letter ser-letter">O</span>
+                                    <div class="se-letter-content">
+                                        <strong>Origin</strong>
+                                        <span>Where someone or something is from; nationality</span>
+                                        <em>Soy de Panamá. — I am from Panama.</em>
+                                    </div>
+                                </li>
+                                <li>
+                                    <span class="se-letter ser-letter">R</span>
+                                    <div class="se-letter-content">
+                                        <strong>Relationships</strong>
+                                        <span>Family ties and personal connections</span>
+                                        <em>Ella es mi hermana. — She is my sister.</em>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="se-card">
+                            <div class="se-card-header estar-header">
+                                <span class="se-card-verb">ESTAR</span>
+                                <span class="se-card-mnemonic">P.L.A.C.E.</span>
+                            </div>
+                            <p class="se-card-desc">Use <strong>ESTAR</strong> for temporary states and conditions. Remember the <strong>PLACE</strong> acronym:</p>
+                            <ul class="se-acronym-list">
+                                <li>
+                                    <span class="se-letter estar-letter">P</span>
+                                    <div class="se-letter-content">
+                                        <strong>Position</strong>
+                                        <span>Physical stance or posture of a person or object</span>
+                                        <em>El libro está abierto. — The book is open.</em>
+                                    </div>
+                                </li>
+                                <li>
+                                    <span class="se-letter estar-letter">L</span>
+                                    <div class="se-letter-content">
+                                        <strong>Location</strong>
+                                        <span>Where someone or something physically is right now</span>
+                                        <em>Estoy en la casa. — I am at home.</em>
+                                    </div>
+                                </li>
+                                <li>
+                                    <span class="se-letter estar-letter">A</span>
+                                    <div class="se-letter-content">
+                                        <strong>Actions</strong>
+                                        <span>Progressive actions in progress (used with -ando / -iendo)</span>
+                                        <em>Estoy comiendo. — I am eating.</em>
+                                    </div>
+                                </li>
+                                <li>
+                                    <span class="se-letter estar-letter">C</span>
+                                    <div class="se-letter-content">
+                                        <strong>Conditions</strong>
+                                        <span>Temporary states or conditions that can change</span>
+                                        <em>El agua está fría. — The water is cold.</em>
+                                    </div>
+                                </li>
+                                <li>
+                                    <span class="se-letter estar-letter">E</span>
+                                    <div class="se-letter-content">
+                                        <strong>Emotions</strong>
+                                        <span>How someone feels at a given moment</span>
+                                        <em>Estoy muy feliz hoy. — I am very happy today.</em>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div id="se-competitive" class="se-panel hidden">
+                <div class="se-construction">
+                    <div class="se-construction-icon">🚧</div>
+                    <h2>Work in Construction</h2>
+                    <p>This section isn't ready yet. Check back soon!</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-para-por" class="view hidden">
+            <div class="pp-tab-bar">
+                <button class="pp-tab-btn active" data-panel="pp-practice">Practice</button>
+                <button class="pp-tab-btn" data-panel="pp-competitive">Competitive</button>
+            </div>
+
+            <div id="pp-practice" class="pp-panel">
+                <div class="pp-content-scroll">
+                    <div class="pp-acronym-cards">
+
+                        <div class="pp-card">
+                            <div class="pp-card-header para-header">
+                                <span class="pp-card-verb">PARA</span>
+                                <span class="pp-card-mnemonic">P.E.R.F.E.C.T.</span>
+                            </div>
+                            <p class="pp-card-desc">Use <strong>PARA</strong> for destination, purpose, recipients, deadlines, and point-of-view ideas. Remember <strong>PERFECT</strong>:</p>
+                            <ul class="pp-acronym-list">
+                                <li>
+                                    <span class="pp-letter para-letter">P</span>
+                                    <div class="pp-letter-content">
+                                        <strong>Purpose</strong>
+                                        <span>Why something is done</span>
+                                        <em>Estudio para aprender. - I study to learn.</em>
+                                    </div>
+                                </li>
+                                <li>
+                                    <span class="pp-letter para-letter">E</span>
+                                    <div class="pp-letter-content">
+                                        <strong>Employment</strong>
+                                        <span>Who someone works for</span>
+                                        <em>Trabajo para una empresa pequena. - I work for a small company.</em>
+                                    </div>
+                                </li>
+                                <li>
+                                    <span class="pp-letter para-letter">R</span>
+                                    <div class="pp-letter-content">
+                                        <strong>Recipient</strong>
+                                        <span>Who receives an item</span>
+                                        <em>Este regalo es para ti. - This gift is for you.</em>
+                                    </div>
+                                </li>
+                                <li>
+                                    <span class="pp-letter para-letter">F</span>
+                                    <div class="pp-letter-content">
+                                        <strong>Future Time</strong>
+                                        <span>A specific future moment</span>
+                                        <em>La reunion es para manana. - The meeting is for tomorrow.</em>
+                                    </div>
+                                </li>
+                                <li>
+                                    <span class="pp-letter para-letter">E</span>
+                                    <div class="pp-letter-content">
+                                        <strong>Event / Destination</strong>
+                                        <span>Where someone/something is headed</span>
+                                        <em>Salgo para la escuela. - I am leaving for school.</em>
+                                    </div>
+                                </li>
+                                <li>
+                                    <span class="pp-letter para-letter">C</span>
+                                    <div class="pp-letter-content">
+                                        <strong>Comparison / Point of View</strong>
+                                        <span>In someone's opinion</span>
+                                        <em>Para mi, es facil. - For me, it is easy.</em>
+                                    </div>
+                                </li>
+                                <li>
+                                    <span class="pp-letter para-letter">T</span>
+                                    <div class="pp-letter-content">
+                                        <strong>Time Limit (Deadline)</strong>
+                                        <span>When something must be finished</span>
+                                        <em>La tarea es para manana. - Homework is due tomorrow.</em>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="pp-card">
+                            <div class="pp-card-header por-header">
+                                <span class="pp-card-verb">POR</span>
+                                <span class="pp-card-mnemonic">D.R.E.A.M.</span>
+                            </div>
+                            <p class="pp-card-desc">Use <strong>POR</strong> for duration, reason, exchange, movement through/around, and means. Remember <strong>DREAM</strong>:</p>
+                            <ul class="pp-acronym-list">
+                                <li>
+                                    <span class="pp-letter por-letter">D</span>
+                                    <div class="pp-letter-content">
+                                        <strong>Duration</strong>
+                                        <span>How long something happens</span>
+                                        <em>Estudie por dos horas. - I studied for two hours.</em>
+                                    </div>
+                                </li>
+                                <li>
+                                    <span class="pp-letter por-letter">R</span>
+                                    <div class="pp-letter-content">
+                                        <strong>Reason/Cause</strong>
+                                        <span>Why something happened</span>
+                                        <em>Lo hice por ti. - I did it because of/for you.</em>
+                                    </div>
+                                </li>
+                                <li>
+                                    <span class="pp-letter por-letter">E</span>
+                                    <div class="pp-letter-content">
+                                        <strong>Exchange</strong>
+                                        <span>Price, trade, substitutions</span>
+                                        <em>Pague diez dolares por eso. - I paid ten dollars for that.</em>
+                                    </div>
+                                </li>
+                                <li>
+                                    <span class="pp-letter por-letter">A</span>
+                                    <div class="pp-letter-content">
+                                        <strong>Around / Through</strong>
+                                        <span>Passing through or around a place</span>
+                                        <em>Caminamos por el parque. - We walked through the park.</em>
+                                    </div>
+                                </li>
+                                <li>
+                                    <span class="pp-letter por-letter">M</span>
+                                    <div class="pp-letter-content">
+                                        <strong>Means / Method</strong>
+                                        <span>How communication or travel happens</span>
+                                        <em>Te llamo por telefono. - I call you by phone.</em>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div id="pp-competitive" class="pp-panel hidden">
+                <div class="se-construction">
+                    <div class="se-construction-icon">🚧</div>
+                    <h2>Competitive Mode Under Construction</h2>
+                    <p>This section is still being built. Coming soon.</p>
+                </div>
+            </div>
+        </section>
+
         </main>
 
         <aside id="testing-container" class="hidden">
@@ -258,10 +550,22 @@
                     <div class="setting-item">
                         <label>UI Animation Speed</label>
                         <div class="toggle-wrapper">
-                            <input type="range" id="anim-speed" min="0.5" max="3" step="0.1" value="1">
-                            <span id="anim-speed-val" style="margin-left: 10px; font-weight: bold;">1.0x</span>
+                            <input type="range" id="anim-speed" min="0.5" max="3" step="0.1" value="1.2">
+                            <span id="anim-speed-val" style="margin-left: 10px; font-weight: bold;">1.2x</span>
                         </div>
-                        <div class="recommend-label" id="rec-anim-speed">Recommended: 1.0x</div>
+                        <div class="recommend-label" id="rec-anim-speed">Recommended: 1.2x</div>
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <h3>Mode Select</h3>
+                    <div class="setting-item">
+                        <label>Topic Grid Size</label>
+                        <div class="toggle-wrapper">
+                            <input type="range" id="mode-grid-size" min="360" max="960" step="10" value="920">
+                            <span id="mode-grid-size-val" style="margin-left: 10px; font-weight: bold;">920px</span>
+                        </div>
+                        <div class="recommend-label" id="rec-mode-grid-size">Recommended: 920px</div>
                     </div>
                 </div>
 
@@ -294,13 +598,6 @@
                             <span id="practice-choices-val" style="margin-left: 10px; font-weight: bold;">9</span>
                         </div>
                         <div class="recommend-label" id="rec-practice-choices">Recommended: 9</div>
-                    </div>
-                    <div class="setting-item">
-                        <label>Practice UI Speed</label>
-                        <div class="toggle-wrapper">
-                            <input type="range" id="practice-anim-speed" min="0.5" max="3" step="0.1" value="1">
-                            <span id="practice-anim-speed-val" style="margin-left: 10px; font-weight: bold;">1.0x</span>
-                        </div>
                     </div>
                 </div>
 

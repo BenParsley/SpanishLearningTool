@@ -75,11 +75,6 @@ const rawBodyParts = formatBundle('Body Part', [
     ["Skin", "Piel"],
     ["Mole", "Lunar"],
     ["Freckle|Freckle", "Peca"],
-    ["Anus", "Ano"],
-    ["Penis", "Pinga"],
-    ["Testicles | balls", "Huevos"],
-    ["Vagina | Pussy", "Toto"],
-    ["Clitoris", "Pepita"]
 ]);
 
 const rawAnimals = formatBundle('Animals', [
@@ -180,7 +175,7 @@ const rawEmotions = formatBundle('Emotions', [
     ["Confident", "Confiado"]
 ]);
 
-const rawFillerWords_01 = formatBundle('Filler Words 01', [
+const rawFillerWords = formatBundle('Filler Words', [
     ["Right?", "¿No?"],
     ["Well", "Bueno"],
     ["I Mean", "O Sea"],
@@ -199,9 +194,6 @@ const rawFillerWords_01 = formatBundle('Filler Words 01', [
     ["Not at all", "Para Nada"],
     ["Exactly", "Exacto"],
     ["For example", "Por ejemplo"],
-]);
-
-const rawFillerWords_02 = formatBundle('Filler Words 02', [
     ["In the end", "Al Final"],
     ["Look", "Mire | Mira"],
     ["I mean (self-correction)", "Digo"],
@@ -220,10 +212,7 @@ const rawFillerWords_02 = formatBundle('Filler Words 02', [
     ["No way", "Qué Va"],
     ["Yes or no?", "Sí o no?"],
     ["Actually", "En realidad"],
-    ["I'm telling you", "Te lo digo"]
-]);
-
-const rawFillerWords_03 = formatBundle('Filler Words 03', [
+    ["I'm telling you", "Te lo digo"],
     ["Well then", "Bueno Pues"],
     ["Exactly like that", "Tal Cual"],
     ["Let's say", "Digamos que"],
@@ -246,11 +235,19 @@ const rawFillerWords_03 = formatBundle('Filler Words 03', [
     ["That being said", "Dicho esto"]
 ]);
 
+const CUSTOM_VOCAB_BUNDLE_ID = 'bundle_custom_vocab';
+const BASE_VOCAB_BUNDLE_IDS = ['bundle_1', 'bundle_2', 'bundle_3', 'bundle_4'];
+const CATEGORY_TO_BUNDLE_ID = {
+    'Body Part': 'bundle_1',
+    'Animals': 'bundle_2',
+    'Emotions': 'bundle_3',
+    'Filler Words': 'bundle_4'
+};
+
 const availableBundles = [
+    { id: CUSTOM_VOCAB_BUNDLE_ID, name: '🟡 Custom', data: '' },
     { id: 'bundle_1', name: '🦵 Body Parts', data: rawBodyParts },
     { id: 'bundle_2', name: '🐾 Animals', data: rawAnimals },
     { id: 'bundle_3', name: '😃 Emotions', data: rawEmotions },
-    { id: 'bundle_4', name: 'Filler Words 01', data: rawFillerWords_01 },
-    { id: 'bundle_5', name: 'Filler Words 02', data: rawFillerWords_02 },
-    { id: 'bundle_6', name: 'Filler Words 03', data: rawFillerWords_03 }
+    { id: 'bundle_4', name: '💬 Filler Words', data: rawFillerWords }
 ];
