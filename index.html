@@ -77,12 +77,14 @@
         <section id="view-wordlist" class="view hidden">
             <div class="controls-header">
                 <input type="text" id="wordlist-search" placeholder="Search words...">
-                <div class="sort-btn-group">
+                <div class="sort-btn-group" style="position: relative;">
                     <button class="sort-btn active" data-key="default">Default</button>
                     <button class="sort-btn" data-key="en">English</button>
                     <button class="sort-btn" data-key="es">Spanish</button>
                     <button class="sort-btn" data-key="skip">Don't Know</button>
                     <button class="sort-btn" data-key="wrong">Wrong</button>
+                    <button id="btn-bundle-filter" class="sort-btn" title="Bundle Filter">Bundle</button>
+                    <div id="bundle-filter-menu" class="hidden"></div>
                 </div>
             </div>
             <div class="word-grid" id="wordlist-container"></div>
@@ -656,6 +658,9 @@
                             <button id="btn-settings-redo" class="data-btn" disabled style="flex: 1;">Redo</button>
                         </div>
                         <div id="settings-undo-label" style="font-size: 0.8rem; color: #666; text-align: center; margin-top: 5px; font-style: italic;">Nothing to undo</div>
+                    </div>
+                    <div class="setting-item">
+                        <button id="btn-debug-randomize" class="data-btn">Randomize Data</button>
                     </div>
                 </div>
             </div>

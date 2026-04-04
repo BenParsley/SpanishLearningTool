@@ -73,6 +73,7 @@ const AppState = {
     },
     wordlistSort: { key: 'default', order: 'asc' },
     wordlistSearch: '',
+    wordlistBundleFilter: {},
     statsSearch: '',
     practiceStatsSearch: '',
     modePage: 0,
@@ -380,6 +381,15 @@ window.addEventListener('DOMContentLoaded', () => {
     setupStatsColumnMenu();
     setupPracticeStatsColumnMenu();
     initBackgroundParticles();
+
+    // Close bundle filter menu on outside click
+    document.addEventListener('click', (e) => {
+        const menu = document.getElementById('bundle-filter-menu');
+        const btn = document.getElementById('btn-bundle-filter');
+        if (menu && !menu.classList.contains('hidden') && !menu.contains(e.target) && e.target !== btn) {
+            menu.classList.add('hidden');
+        }
+    });
     
     // Initial sort highlight
     updateSortHeaderStyles();
@@ -622,6 +632,7 @@ function setupEventListeners() {
 
         UI.testingContainer.classList.add('hidden');
         document.body.classList.remove('focus-mode-active');
+        UI.mainContainer.classList.add('wide');
 
         saveData();
         
@@ -942,6 +953,7 @@ function setupEventListeners() {
     document.getElementById('btn-debug-enable').addEventListener('click', enableDebugMode);
     document.getElementById('btn-debug-disable').addEventListener('click', disableDebugMode);
     document.getElementById('btn-debug-recalibrate').addEventListener('click', recalibrateWeights);
+    document.getElementById('btn-debug-randomize').addEventListener('click', randomizeBundleData);
 
     UI.statsBody.addEventListener('input', (e) => {
         if (!AppState.isStatsDebug) return;
@@ -1367,6 +1379,57 @@ function setupPracticeStatsColumnMenu() {
     });
 }
 
+function setupBundleFilterMenu() {
+    const btn = document.getElementById('btn-bundle-filter');
+    const menu = document.getElementById('bundle-filter-menu');
+    if (!btn || !menu) return;
+
+    menu.innerHTML = '';
+    const bundleIds = Object.keys(AppState.wordlistBundleFilter);
+    const updateCheckboxStates = () => {
+        const checkedCount = Object.values(AppState.wordlistBundleFilter).filter(v => v !== false).length;
+        menu.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            if (cb.checked && checkedCount <= 1) {
+                cb.disabled = true;
+                cb.parentElement.style.opacity = '0.5';
+                cb.parentElement.style.cursor = 'not-allowed';
+            } else {
+                cb.disabled = false;
+                cb.parentElement.style.opacity = '';
+                cb.parentElement.style.cursor = '';
+            }
+        });
+    };
+
+    bundleIds.forEach(id => {
+        const bundleInfo = getAvailableBundles().find(b => b.id === id);
+        if (!bundleInfo) return;
+        const label = document.createElement('label');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = AppState.wordlistBundleFilter[id] !== false;
+        checkbox.addEventListener('change', (e) => {
+            AppState.wordlistBundleFilter[id] = e.target.checked;
+            updateCheckboxStates();
+            renderWordlist();
+        });
+        label.appendChild(checkbox);
+        const plainName = bundleInfo.name.replace(/^\p{Emoji_Presentation}\s*/u, '').replace(/^\p{So}\s*/u, '');
+        label.appendChild(document.createTextNode(plainName));
+        menu.appendChild(label);
+    });
+
+    updateCheckboxStates();
+
+    // Remove old listeners by cloning
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+    newBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        menu.classList.toggle('hidden');
+    });
+}
+
 function updateStatsColumnVisibility() {
     const table = document.querySelector('#view-stats table');
     if (!table) return;
@@ -1532,6 +1595,7 @@ function setSelectorNavState(state) {
     UI.subNav.classList.add('hidden');
 
     if (state === 'mode') {
+        UI.mainContainer.classList.add('wide');
         if (seTabBar) seTabBar.classList.remove('hidden');
         if (ppTabBar) ppTabBar.classList.remove('hidden');
         UI.nav.classList.remove('mode-nav-muted');
@@ -1539,7 +1603,7 @@ function setSelectorNavState(state) {
         if (leftGroup) leftGroup.style.visibility = 'hidden';
         if (centerGroup) centerGroup.style.display = '';
         if (rightGroup) rightGroup.style.display = '';
-        if (rightGroup) rightGroup.style.visibility = 'hidden';
+        if (rightGroup) rightGroup.style.visibility = '';
         setCenteredTitle('Choose Your Topic');
         if (backBtn) {
             backBtn.textContent = '←';
@@ -1550,6 +1614,7 @@ function setSelectorNavState(state) {
     }
 
     if (state === 'landing') {
+        UI.mainContainer.classList.add('wide');
         if (seTabBar) seTabBar.classList.remove('hidden');
         if (ppTabBar) ppTabBar.classList.remove('hidden');
         UI.nav.classList.remove('mode-nav-muted');
@@ -1557,7 +1622,7 @@ function setSelectorNavState(state) {
         if (leftGroup) leftGroup.style.visibility = '';
         if (centerGroup) centerGroup.style.display = '';
         if (rightGroup) rightGroup.style.display = '';
-        if (rightGroup) rightGroup.style.visibility = 'hidden';
+        if (rightGroup) rightGroup.style.visibility = '';
         setCenteredTitle('Choose Your Vocabulary');
         if (backBtn) {
             backBtn.textContent = '←';
@@ -1568,6 +1633,7 @@ function setSelectorNavState(state) {
     }
 
     if (state === 'ser-estar') {
+        UI.mainContainer.classList.add('wide');
         UI.nav.classList.remove('mode-nav-muted');
         if (leftGroup) leftGroup.style.display = '';
         if (leftGroup) leftGroup.style.visibility = '';
@@ -1598,6 +1664,7 @@ function setSelectorNavState(state) {
     }
 
     if (state === 'para-por') {
+        UI.mainContainer.classList.add('wide');
         UI.nav.classList.remove('mode-nav-muted');
         if (leftGroup) leftGroup.style.display = '';
         if (leftGroup) leftGroup.style.visibility = '';
@@ -1647,9 +1714,9 @@ function setSelectorNavState(state) {
 function renderModeSelect() {
     UI.modeGrid.innerHTML = '';
     const modesPage0 = [
-        { name: '📖 Vocabulary', active: true, action: 'vocabulary' },
-        { name: '🧭 SER or ESTAR', active: true, action: 'ser-estar' },
-        { name: '➡️ PARA or POR', active: true, action: 'para-por' }
+        { name: 'Vocabulary', active: true, action: 'vocabulary' },
+        { name: 'SER or ESTAR', active: true, action: 'ser-estar' },
+        { name: 'PARA or POR', active: true, action: 'para-por' }
     ];
     while (modesPage0.length < 9) {
         modesPage0.push({ name: '', active: false });
@@ -1745,29 +1812,32 @@ function renderLandingPage() {
             const pctSilver = total > 0 ? ((silver / total) * 100).toFixed(1) : '0.0';
             const pctGold = total > 0 ? ((gold / total) * 100).toFixed(1) : '0.0';
 
-            const customSelectionLine = isCustomBundle
-                ? `<div class="bundle-custom-line">Selected: ${getCustomSelectedBundleIds().length}/${getBaseVocabBundleIds().length}</div>`
-                : '';
-            const customModeLine = isCustomBundle && AppState.isCustomSelectionMode
-                ? `<div class="bundle-custom-line">Choose bundles, then Continue</div>`
-                : '';
             const statsTitleLine = !isCustomBundle
                 ? `<div class="bundle-stats-title">${bundle.name}</div>`
                 : '';
 
-            const customActions = isCustomBundle && AppState.isCustomSelectionMode
-                ? `<div class="bundle-custom-actions">
-                    <button type="button" class="bundle-custom-action custom-action-continue">Continue</button>
-                    <button type="button" class="bundle-custom-action custom-action-cancel">Cancel</button>
-                </div>`
-                : '';
-
-            if (isCustomBundle) {
+            if (isCustomBundle && AppState.isCustomSelectionMode) {
+                const selectedIds = getCustomSelectedBundleIds();
+                const allBundles = getAvailableBundles();
+                let selectedListHTML = '';
+                if (selectedIds.length === 0) {
+                    selectedListHTML = '<div class="bundle-custom-list-empty">No bundles selected</div>';
+                } else {
+                    const names = selectedIds.map(id => {
+                        const b = allBundles.find(x => x && x.id === id);
+                        return b ? b.name : id;
+                    });
+                    selectedListHTML = '<div class="bundle-custom-list">' + names.map(n => `<div class="bundle-custom-list-item">${n}</div>`).join('') + '</div>';
+                }
+                btn.innerHTML = `
+                    <button type="button" class="bundle-custom-icon-btn custom-action-cancel" title="Cancel">✕</button>
+                    <button type="button" class="bundle-custom-icon-btn custom-action-continue" title="Continue">✓</button>
+                    <span class="bundle-name">${bundle.name}</span>
+                    ${selectedListHTML}`;
+            } else if (isCustomBundle) {
                 btn.innerHTML = `
                     <span class="bundle-name">${bundle.name}</span>
-                    ${customSelectionLine}
-                    ${customModeLine}
-                    ${customActions}`;
+                    <span class="bundle-custom-hint">Click here to enable multi-select</span>`;
             } else {
                 btn.innerHTML = `
                     <div class="bundle-stats">
@@ -1894,14 +1964,19 @@ function loadBundle(bundle) {
 
     AppState.words = freshWords;
 
+    // Initialize bundle filter
+    const filterIds = bundle.id === getCustomVocabBundleId()
+        ? getCustomSelectedBundleIds()
+        : [bundle.id];
+    AppState.wordlistBundleFilter = {};
+    filterIds.forEach(id => { AppState.wordlistBundleFilter[id] = true; });
+    setupBundleFilterMenu();
+
     // Keep selector visible while fading out so resize can happen between fades.
     UI.landing.classList.remove('fade-in');
     setTimeout(() => {
         UI.landing.classList.add('hidden');
         setSelectorNavState('learning');
-        UI.nav.classList.remove('nav-fade-in');
-        void UI.nav.offsetWidth;
-        UI.nav.classList.add('nav-fade-in');
         renderWordlist();
         renderStats();
         switchView('view-wordlist');
@@ -2049,8 +2124,15 @@ function renderWordlist() {
     UI.wordlist.scrollTop = 0;
     UI.wordlistContainer.innerHTML = '';
     
-    // Filter
+    // Bundle filter
     let wordsToRender = [...AppState.words].filter(word => {
+        const bundleId = getCategoryBundleId(word.category);
+        if (bundleId && AppState.wordlistBundleFilter[bundleId] === false) return false;
+        return true;
+    });
+
+    // Search filter
+    wordsToRender = wordsToRender.filter(word => {
         if (!AppState.wordlistSearch) return true;
         return word.en.toLowerCase().includes(AppState.wordlistSearch) || 
                word.es.toLowerCase().includes(AppState.wordlistSearch);
@@ -2075,6 +2157,7 @@ function renderWordlist() {
 
     // Update Buttons UI
     document.querySelectorAll('.sort-btn').forEach(btn => {
+        if (!btn.dataset.key) return;
         btn.classList.remove('active');
         let label = btn.dataset.key;
         if (label === 'default') label = 'Default';
@@ -2106,6 +2189,12 @@ function renderWordlist() {
             content += `<span class="skip-badge">Don't Know: ${word.skip}</span>`;
         } else if (AppState.wordlistSort.key === 'wrong') {
             content += `<span class="wrong-badge">Wrong: ${word.wrong}</span>`;
+        }
+        const bundleId = getCategoryBundleId(word.category);
+        const bundleInfo = bundleId ? getAvailableBundles().find(b => b.id === bundleId) : null;
+        if (bundleInfo) {
+            const plainName = bundleInfo.name.replace(/^\p{Emoji_Presentation}\s*/u, '').replace(/^\p{So}\s*/u, '');
+            content += `<span class="bundle-label">${plainName}</span>`;
         }
         div.innerHTML = content;
         div.addEventListener('click', () => {
@@ -2758,6 +2847,35 @@ function calculateWeight(word) {
 
 function updateWordWeight(word) {
     word.weight = calculateWeight(word);
+}
+
+function randomizeBundleData() {
+    if (!confirm('Randomize all bundle stats in browser storage? This cannot be undone.')) return;
+    const fullData = loadStoredBundleData();
+    const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+    for (const bundleId of Object.keys(fullData.bundles)) {
+        const words = fullData.bundles[bundleId];
+        if (!Array.isArray(words)) continue;
+        for (const w of words) {
+            const correct = randInt(0, 100);
+            const wrong = randInt(0, 100);
+            const attempts = correct + wrong;
+            const streak = randInt(0, correct);
+            const skip = randInt(0, 100);
+            w.attempts = attempts;
+            w.correct = correct;
+            w.wrong = wrong;
+            w.streak = streak;
+            w.skip = skip;
+        }
+    }
+    localStorage.setItem('wordBundleStats', JSON.stringify(fullData));
+    if (AppState.currentBundleId && fullData.bundles[AppState.currentBundleId]) {
+        AppState.words = fullData.bundles[AppState.currentBundleId];
+    }
+    if (!UI.stats.classList.contains('hidden')) renderStats();
+    renderLandingPage();
+    alert('Bundle stats randomized.');
 }
 
 function recalibrateWeights() {

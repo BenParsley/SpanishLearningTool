@@ -245,9 +245,9 @@ const CATEGORY_TO_BUNDLE_ID = {
 };
 
 const availableBundles = [
-    { id: CUSTOM_VOCAB_BUNDLE_ID, name: '🟡 Custom', data: '' },
-    { id: 'bundle_1', name: '🦵 Body Parts', data: rawBodyParts },
-    { id: 'bundle_2', name: '🐾 Animals', data: rawAnimals },
-    { id: 'bundle_3', name: '😃 Emotions', data: rawEmotions },
-    { id: 'bundle_4', name: '💬 Filler Words', data: rawFillerWords }
+    { id: CUSTOM_VOCAB_BUNDLE_ID, name: 'Multi-Bundle', data: '' },
+    { id: 'bundle_1', name: 'Body Parts', data: rawBodyParts },
+    { id: 'bundle_2', name: 'Animals', data: rawAnimals },
+    { id: 'bundle_3', name: 'Emotions', data: rawEmotions },
+    { id: 'bundle_4', name: 'Filler Words', data: rawFillerWords }
 ];
