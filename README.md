@@ -14,11 +14,10 @@ A lightweight browser-based Spanish practice app focused on quick vocabulary tra
 - Early placeholder sections for SER vs ESTAR and PARA vs POR
 - Basic account area placeholder (not implemented)
 
-## Tech Stack
-- Vanilla JavaScript
-- HTML
-- CSS
-- LocalStorage for persistence
+
+Example of current UI elements :
+<img width="1800" height="910" alt="example" src="https://github.com/user-attachments/assets/c398fb14-dc8c-4fc6-8997-1a39eef5a2ef" />
+
 
 ## Project Status
 This is an early MVP with core learning flow in place and limited feature depth. More content and polish are planned.
