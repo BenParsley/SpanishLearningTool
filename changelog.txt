@@ -1,0 +1,18 @@
+04/04/2026 - very early build of this Spanish learning tool. 
+    -   Currently supports 4 Vocabulary word bundles - Body Parts, Animinals, Emotions and Filler Words
+        -   Plus a custom word bundle that allows multiple to be selected as once 
+    -   Has placeholders for SER or ESTAR comparisions 
+    -   Has placeholders for PARA or POR comparisions. 
+
+    -   Supports the users progress to be stored to their browser locally. The freqnency of this can be adjusted within the settings-contrainer.
+        -   This data is used to show the next word based on a weight which takes a few things into consideration : 
+            -   $$w = \text{clamp}\Big(100 + 15w_{\text{wrong}} + 10s_{\text{skip}} - 10s_{\text{streak}} - a_{\text{attempts}},\; 1,\; 1000\Big)$$
+                    Where:
+                    - $w_{\text{wrong}}$ = total incorrect answers
+                    - $s_{\text{skip}}$ = total skips
+                    - $s_{\text{streak}}$ = current correct streak
+                    - $a_{\text{attempts}}$ = total attempts
+            -   Basically words that are incorrect answered, are mot likely to be shown to the user whilst in the COMPETITIVE mode. 
+
+    -   Account creation and managment has been delayed indefinitely.
+        -   Placeholder screen is shown when visiting the webiste. 
