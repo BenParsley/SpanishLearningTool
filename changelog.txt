@@ -27,3 +27,5 @@
             -   Basically words that are incorrect answered, are mot likely to be shown to the user whilst in the COMPETITIVE mode. 
     -   Account creation and managment has been delayed indefinitely.
         -   Placeholder screen is shown when visiting the webiste. 
+
+Project started back in Feburary; changes weren't logged prior to 04/04/2026
