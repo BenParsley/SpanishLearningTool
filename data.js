@@ -32,8 +32,6 @@ const rawBodyParts = formatBundle('Body Part', [
     ["Throat", "Garganta"],
     ["Shoulder", "Hombro"],
     ["Chest", "Pecho"],
-    ["Breast", "Chichi"],
-    ["Nipple", "Pezón"],
     ["Back", "Espalda"],
     ["Waist", "Cintura"],
     ["Belly Button", "Ombligo"],

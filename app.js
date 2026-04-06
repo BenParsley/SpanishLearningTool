@@ -34,11 +34,11 @@ const AppState = {
         disabledBgColor: '#ffffff',
         bgTheme: 'bg-rainbow',
         autoCycleThemes: true,
-        progressSpeed: 2000,
-        practiceDelay: 1500,
+        progressSpeed: 1000,
+        practiceDelay: 1000,
         practiceChoices: 9,
         practiceAnimSpeed: 1,
-        modeGridSize: 920,
+        modeGridSize: 650,
         wordlistCols: 6,
         animSpeed: 1.2,
         animPreset: '1',
@@ -731,10 +731,10 @@ function setupEventListeners() {
     document.getElementById('practice-delay').addEventListener('change', saveData);
 
     document.getElementById('rec-practice-delay').addEventListener('click', () => {
-        const val = 1500;
+        const val = 1000;
         document.getElementById('practice-delay').value = val;
         AppState.settings.practiceDelay = val;
-        document.getElementById('practice-delay-val').innerText = "1.5s";
+        document.getElementById('practice-delay-val').innerText = "1.0s";
         saveData();
     });
 
@@ -760,10 +760,10 @@ function setupEventListeners() {
     });
 
     document.getElementById('rec-progress-speed').addEventListener('click', () => {
-        const val = 1500;
+        const val = 1000;
         document.getElementById('progress-speed').value = val;
         AppState.settings.progressSpeed = val;
-        document.getElementById('progress-speed-val').innerText = "1.5s";
+        document.getElementById('progress-speed-val').innerText = "1.0s";
         saveData();
     });
 
@@ -830,7 +830,7 @@ function setupEventListeners() {
     });
 
     document.getElementById('rec-mode-grid-size').addEventListener('click', () => {
-        const val = 920;
+        const val = 650;
         document.getElementById('mode-grid-size').value = val;
         AppState.settings.modeGridSize = val;
         document.getElementById('mode-grid-size-val').innerText = `${val}px`;
@@ -1123,11 +1123,11 @@ function loadGlobalData() {
                 SpeechManager.setRandom(AppState.settings.randomVoice);
 
                 if (!AppState.settings.bgTheme) AppState.settings.bgTheme = 'bg-rainbow';
-                if (!AppState.settings.progressSpeed) AppState.settings.progressSpeed = 2000;
-                if (!AppState.settings.practiceDelay) AppState.settings.practiceDelay = 1500;
+                if (!AppState.settings.progressSpeed) AppState.settings.progressSpeed = 1000;
+                if (!AppState.settings.practiceDelay) AppState.settings.practiceDelay = 1000;
                 if (!AppState.settings.practiceChoices) AppState.settings.practiceChoices = 9;
                 if (!AppState.settings.practiceAnimSpeed) AppState.settings.practiceAnimSpeed = 1;
-                if (!AppState.settings.modeGridSize) AppState.settings.modeGridSize = 920;
+                if (!AppState.settings.modeGridSize) AppState.settings.modeGridSize = 650;
                 if (!AppState.settings.wordlistCols) AppState.settings.wordlistCols = 6;
                 if (!AppState.settings.animSpeed) AppState.settings.animSpeed = 1.2;
                 AppState.settings.animPreset = '1';

@@ -19,7 +19,7 @@
     --border-width: 1px;
     --disabled-bg-color: #ffffff;
     --selector-content-max: 480px;
-    --mode-grid-max: 920px;
+    --mode-grid-max: 650px;
 }
 
 /* ============================
@@ -339,7 +339,7 @@ body.focus-mode-active #sub-nav:hover {
     position: absolute;
     left: 50%;
     top: 60px;
-    transform: translateX(calc(min(90vw, 600px) / 2 + 20px));
+    transform: translateX(calc(min(90vw, 650px) / 2 + 20px));
     transition: transform calc(0.6s * var(--anim-dur-mult) / var(--anim-speed)) var(--anim-easing), opacity calc(0.3s * var(--anim-dur-mult) / var(--anim-speed)) var(--anim-easing), filter calc(0.3s * var(--anim-dur-mult) / var(--anim-speed)) var(--anim-easing);
     max-height: 85vh;
     overflow: hidden;
@@ -349,7 +349,7 @@ body.focus-mode-active #sub-nav:hover {
     display: flex !important;
     opacity: 0;
     pointer-events: none;
-    transform: translateX(calc(min(90vw, 600px) / 2 + 20px)) scale(0.9);
+    transform: translateX(calc(min(90vw, 650px) / 2 + 20px)) scale(0.9);
 }
 
 /* Hover effect only on desktop/when not pinned logic if applicable, keeping simple */
