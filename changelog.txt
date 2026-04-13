@@ -1,7 +1,3 @@
-06/04/2026
-    -    Fixed a issue with the grid size being 920px rather than 650px
-    -    Fixed the position of the testing-container when going to into Competitive mode for Vocabulary
-
 04/04/2026 - UI Polish: Multi-Bundle and Button Hover States
     -   Added another filter within the Stastics that allows the user to select specific bundles (whilst they are utilizing multi-bundle)
     -   Added a Randomize Data setting into the Debug menu
@@ -28,4 +24,21 @@
     -   Account creation and managment has been delayed indefinitely.
         -   Placeholder screen is shown when visiting the webiste. 
 
-Project started back in Feburary; changes weren't logged prior to 04/04/2026
+13/04/2026 - Settings panel, location tracking, and debug gating improvements
+    -   Added a Current Location display inside the General section of the testing-contrainer.
+    -   Added the Active Stats toggle under Current Location and renamed labels to Show/Hide Active Stats.
+    -   Improved location tracking to follow user flow across Home, Topic Selection, Vocabulary bundles, Practice, and Grammar views.
+    -   Extended Grammar tracking to include sub-modes:
+        -   Grammar > Ser/Estar > Practice or Competitive
+        -   Grammar > Para/Por > Practice or Competitive
+    -   Fixed location updates when using the global back button and mode/topic selection transitions.
+    -   Updated the testing-contrainer behavior:
+        -   Closed by default on page load/refresh
+        -   No persisted open/closed state between browser sessions
+        -   Stays open during navigation unless user closes it
+    -   Reworked Debug access rules:
+        -   Debug is only available in Vocabulary > (Any Bundle / Multi-Bundle) > Competitive
+        -   Outside eligible location, debug actions are disabled and grayed out
+        -   User must click Enable in eligible location before debug controls become active
+    -   Hid the positive debug note in eligible location and kept only the warning message for ineligible locations.
+    -   Fixed a timing issue where Debug Enable could remain grayed out during Competitive view transitions; eligibility is now re-evaluated when the view is shown.

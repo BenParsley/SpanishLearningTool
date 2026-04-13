@@ -491,11 +491,14 @@
         <aside id="testing-container" class="hidden">
             <div class="settings-header">Settings</div>
             <div class="settings-scroll-area">
-            <div id="debug-content" style="padding: 10px 15px 0 15px; font-size: 0.9rem; color: #666;"></div>
             
             <div class="settings-content">
                 <div class="settings-group">
                     <h3>General</h3>
+                    <div class="setting-item">
+                        <div id="current-section-display" class="current-section-display">Current Location: Home</div>
+                        <button id="btn-toggle-debug-stats" class="data-btn" style="margin-top: 10px;">Show Active Stats</button>
+                    </div>
                     <div class="setting-item">
                         <label>Voice Gender</label>
                         <div class="toggle-wrapper" style="margin-bottom: 8px;">
@@ -532,24 +535,6 @@
                         </div>
                     </div>
                     <div class="setting-item">
-                        <label>Focus Mode</label>
-                        <div class="toggle-wrapper">
-                            <input type="checkbox" id="focus-mode-toggle">
-                            <label for="focus-mode-toggle">Fade distractions in Competitive</label>
-                        </div>
-                    </div>
-                    <div class="setting-item">
-                        <label>Background Visibility</label>
-                        <div class="toggle-wrapper">
-                            <input type="checkbox" id="disable-bg">
-                            <label for="disable-bg">Disable Animation</label>
-                        </div>
-                        <div class="toggle-wrapper" style="margin-top: 10px;">
-                            <label for="disabled-bg-color" style="font-weight: normal; font-size: 0.9rem;">Solid Color:</label>
-                            <input type="color" id="disabled-bg-color" value="#ffffff" style="height: 30px; width: 60px; padding: 0; border: none; cursor: pointer;">
-                        </div>
-                    </div>
-                    <div class="setting-item">
                         <label>UI Animation Speed</label>
                         <div class="toggle-wrapper">
                             <input type="range" id="anim-speed" min="0.5" max="3" step="0.1" value="1.2">
@@ -560,7 +545,7 @@
                 </div>
 
                 <div class="settings-group">
-                    <h3>Mode Select</h3>
+                    <h3>Personal</h3>
                     <div class="setting-item">
                         <label>Topic Grid Size</label>
                         <div class="toggle-wrapper">
@@ -569,10 +554,6 @@
                         </div>
                         <div class="recommend-label" id="rec-mode-grid-size">Recommended: 650px</div>
                     </div>
-                </div>
-
-                <div class="settings-group">
-                    <h3>Wordlist</h3>
                     <div class="setting-item">
                         <label>Wordlist Columns</label>
                         <div class="toggle-wrapper">
@@ -584,34 +565,14 @@
                 </div>
 
                 <div class="settings-group">
-                    <h3>Practice</h3>
-                    <div class="setting-item">
-                        <label>Practice New Word Delay</label>
-                        <div class="toggle-wrapper">
-                            <input type="range" id="practice-delay" min="500" max="3000" step="100" value="1000">
-                            <span id="practice-delay-val" style="margin-left: 10px; font-weight: bold;">1.0s</span>
-                        </div>
-                        <div class="recommend-label" id="rec-practice-delay">Recommended: 1.0s</div>
-                    </div>
-                    <div class="setting-item">
-                        <label>Practice Choices</label>
-                        <div class="toggle-wrapper">
-                            <input type="range" id="practice-choices" min="3" max="9" step="1" value="9">
-                            <span id="practice-choices-val" style="margin-left: 10px; font-weight: bold;">9</span>
-                        </div>
-                        <div class="recommend-label" id="rec-practice-choices">Recommended: 9</div>
-                    </div>
-                </div>
-
-                <div class="settings-group">
-                    <h3>Competitive</h3>
+                    <h3>Timing</h3>
                     <div class="setting-item">
                         <label>New Word Delay</label>
                         <div class="toggle-wrapper">
-                            <input type="range" id="progress-speed" min="500" max="5000" step="100" value="1000">
-                            <span id="progress-speed-val" style="margin-left: 10px; font-weight: bold;">1.0s</span>
+                            <input type="range" id="new-word-delay" min="500" max="5000" step="100" value="1000">
+                            <span id="new-word-delay-val" style="margin-left: 10px; font-weight: bold;">1.0s</span>
                         </div>
-                        <div class="recommend-label" id="rec-progress-speed">Recommended: 1.0s</div>
+                        <div class="recommend-label" id="rec-new-word-delay">Recommended: 1.0s</div>
                     </div>
                 </div>
 
@@ -635,32 +596,42 @@
                         <div class="toggle-wrapper" style="justify-content: space-between; gap: 5px;">
                             <button id="btn-export" class="data-btn" style="flex: 1 0 40%;">Download Data</button>
                             <button id="btn-import-trigger" class="data-btn" style="flex: 1 0 40%;">Import Data</button>
-                            <button id="btn-delete-all-data" class="data-btn" style="color: #fff; background-color: var(--danger); border-color: var(--danger); flex: 1 0 40%;">Delete All</button>
                             <input type="file" id="file-import" accept=".json" multiple style="display: none;">
                         </div>
                     </div>
                 </div>
 
                 <div class="settings-group">
-                    <h3>Debug</h3>
-                    <div class="setting-item">
+                    <h3>Vocabulary Competitive Debugger</h3>
+                    <div id="debug-location-message" class="debug-location-message">
+                        <p><strong>Note:</strong> You must be in the Competitive mode of a wordlist to use the debug menu.</p>
+                    </div>
+                    <div id="debug-action-row" class="setting-item debug-action-row debug-location-disabled">
                         <div style="display: flex; gap: 10px;">
                             <button id="btn-debug-enable" class="data-btn" style="flex: 1;">Enable</button>
                             <button id="btn-debug-disable" class="data-btn" style="flex: 1;">Disable</button>
                         </div>
                     </div>
-                    <div class="setting-item">
-                        <button id="btn-debug-recalibrate" class="data-btn">Recalibrate Weights</button>
-                    </div>
-                    <div class="setting-item">
-                        <div style="display: flex; gap: 10px;">
-                            <button id="btn-settings-undo" class="data-btn" disabled style="flex: 1;">Undo</button>
-                            <button id="btn-settings-redo" class="data-btn" disabled style="flex: 1;">Redo</button>
+                    <div id="debug-controls" class="debug-disabled">
+                        <div class="setting-item">
+                            <button id="btn-debug-recalibrate" class="data-btn">Recalibrate Weights</button>
                         </div>
-                        <div id="settings-undo-label" style="font-size: 0.8rem; color: #666; text-align: center; margin-top: 5px; font-style: italic;">Nothing to undo</div>
-                    </div>
-                    <div class="setting-item">
-                        <button id="btn-debug-randomize" class="data-btn">Randomize Data</button>
+                        <div class="setting-item">
+                            <div style="display: flex; gap: 10px;">
+                                <button id="btn-settings-undo" class="data-btn" disabled style="flex: 1;">Undo</button>
+                                <button id="btn-settings-redo" class="data-btn" disabled style="flex: 1;">Redo</button>
+                            </div>
+                            <div id="settings-undo-label" style="font-size: 0.8rem; color: #666; text-align: center; margin-top: 5px; font-style: italic;">Nothing to undo</div>
+                        </div>
+                        <hr style="margin: 15px 0; border: none; border-top: 1px solid #cbd5e0;">
+                        <div class="setting-item">
+                            <button id="btn-debug-randomize" class="data-btn">Randomize Data</button>
+                        </div>
+                        <div class="setting-item">
+                            <button id="btn-delete-all-data-debug" class="data-btn" style="color: #fff; background-color: var(--danger); border-color: var(--danger); width: 100%;">Delete All Data</button>
+                        </div>
+                        <hr style="margin: 15px 0; border: none; border-top: 1px solid #cbd5e0;">
+                        <div id="debug-content" class="hidden" style="padding: 10px; background-color: #f0f0f0; border-radius: 8px; margin-top: 10px; font-size: 0.9rem; color: #666;"></div>
                     </div>
                 </div>
             </div>

@@ -12,7 +12,6 @@ A lightweight browser-based Spanish practice app focused on quick vocabulary tra
 - Competitive mode with weighted word selection based on user performance
 - Local browser storage for progress and stats
 - Early placeholder sections for SER vs ESTAR and PARA vs POR
-- Basic account area placeholder (not implemented)
 
 ## Tech Stack
 - Vanilla JavaScript

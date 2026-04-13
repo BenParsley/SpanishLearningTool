@@ -29,14 +29,9 @@ const AppState = {
         voiceVolume: 1,
         strictAccents: true,
         requireInvertedPunctuation: false,
-        disableBackground: false,
-        focusMode: false,
-        disabledBgColor: '#ffffff',
         bgTheme: 'bg-rainbow',
         autoCycleThemes: true,
-        progressSpeed: 1000,
-        practiceDelay: 1000,
-        practiceChoices: 9,
+        newWordDelay: 1000,
         practiceAnimSpeed: 1,
         modeGridSize: 650,
         wordlistCols: 6,
@@ -148,6 +143,18 @@ let cycleInterval = null;
 let sessionActionCount = 0;
 let previousStreak = 0;
 const THEMES = ['bg-rainbow', 'bg-ocean', 'bg-sunset', 'bg-forest', 'bg-nebula'];
+const LEGACY_THEME_ALIASES = {
+    'bg-dark-mode': 'bg-dark-squares'
+};
+
+function normalizeBackgroundTheme(themeName) {
+    const fallback = 'bg-rainbow';
+    if (!themeName || typeof themeName !== 'string') return fallback;
+
+    const normalized = LEGACY_THEME_ALIASES[themeName] || themeName;
+    const supportedThemes = [...THEMES, 'bg-dark-squares'];
+    return supportedThemes.includes(normalized) ? normalized : fallback;
+}
 
 function getAnimationSpeed() {
     return AppState.settings.animSpeed || 1;
@@ -356,6 +363,7 @@ function setSerEstarPanel(panelId) {
     document.querySelectorAll('.se-panel').forEach(panel => {
         panel.classList.toggle('hidden', panel.id !== normalizedPanelId);
     });
+    updateCurrentSectionDisplay(normalizedPanelId);
 }
 
 function setParaPorPanel(panelId) {
@@ -366,6 +374,7 @@ function setParaPorPanel(panelId) {
     document.querySelectorAll('.pp-panel').forEach(panel => {
         panel.classList.toggle('hidden', panel.id !== normalizedPanelId);
     });
+    updateCurrentSectionDisplay(normalizedPanelId);
 }
 
 /* --- INITIALIZATION --- */
@@ -408,6 +417,7 @@ function setupEventListeners() {
             crossfadeViews(UI.welcome, UI.modeSelect, () => {
                 UI.mainContainer.classList.add('wide');
                 setSelectorNavState('mode');
+                updateCurrentSectionDisplay('view-mode-select');
             });
         });
     }
@@ -595,6 +605,7 @@ function setupEventListeners() {
     document.getElementById('global-back-btn').addEventListener('click', () => {
         if (!UI.stats.classList.contains('hidden') || !UI.practiceStats.classList.contains('hidden')) {
             switchView('view-competitive');
+            updateCurrentSectionDisplay('view-competitive');
             return;
         }
 
@@ -602,6 +613,7 @@ function setupEventListeners() {
             UI.practiceGameArea.classList.add('hidden');
             UI.btnResetPractice.classList.add('hidden');
             UI.practiceModeSelection.classList.remove('hidden');
+            updateCurrentSectionDisplay('view-practice');
             return;
         }
 
@@ -609,6 +621,7 @@ function setupEventListeners() {
         if (!UI.landing.classList.contains('hidden')) {
             crossfadeViews(UI.landing, UI.modeSelect, () => {
                 setSelectorNavState('mode');
+                updateCurrentSectionDisplay('view-mode-select');
             });
             return;
         }
@@ -618,6 +631,7 @@ function setupEventListeners() {
         if (serEstarView && !serEstarView.classList.contains('hidden')) {
             crossfadeViews(serEstarView, UI.modeSelect, () => {
                 setSelectorNavState('mode');
+                updateCurrentSectionDisplay('view-mode-select');
             });
             return;
         }
@@ -626,11 +640,11 @@ function setupEventListeners() {
         if (paraPorView && !paraPorView.classList.contains('hidden')) {
             crossfadeViews(paraPorView, UI.modeSelect, () => {
                 setSelectorNavState('mode');
+                updateCurrentSectionDisplay('view-mode-select');
             });
             return;
         }
 
-        UI.testingContainer.classList.add('hidden');
         document.body.classList.remove('focus-mode-active');
         UI.mainContainer.classList.add('wide');
 
@@ -653,6 +667,7 @@ function setupEventListeners() {
             AppState.vocabPage = 0;
             setSelectorNavState('landing');
             renderLandingPage();
+            updateCurrentSectionDisplay('view-landing');
         });
     });
 
@@ -695,75 +710,18 @@ function setupEventListeners() {
         saveData();
     });
 
-    document.getElementById('focus-mode-toggle').addEventListener('change', (e) => {
-        AppState.settings.focusMode = e.target.checked;
-        if (!UI.competitive.classList.contains('hidden')) {
-            if (AppState.settings.focusMode) document.body.classList.add('focus-mode-active');
-            else document.body.classList.remove('focus-mode-active');
-        }
-        saveData();
-    });
-
-    document.getElementById('disable-bg').addEventListener('change', (e) => {
-        AppState.settings.disableBackground = e.target.checked;
-        toggleBackground(e.target.checked);
-        saveData();
-    });
-
-    document.getElementById('disabled-bg-color').addEventListener('input', (e) => {
-        AppState.settings.disabledBgColor = e.target.value;
-        document.documentElement.style.setProperty('--disabled-bg-color', e.target.value);
-    });
-    document.getElementById('disabled-bg-color').addEventListener('change', saveData);
-
-    document.getElementById('progress-speed').addEventListener('input', (e) => {
+    document.getElementById('new-word-delay').addEventListener('input', (e) => {
         const val = parseInt(e.target.value);
-        AppState.settings.progressSpeed = val;
-        document.getElementById('progress-speed-val').innerText = `${(val/1000).toFixed(1)}s`;
+        AppState.settings.newWordDelay = val;
+        document.getElementById('new-word-delay-val').innerText = `${(val/1000).toFixed(1)}s`;
     });
-    document.getElementById('progress-speed').addEventListener('change', saveData);
-    
-    document.getElementById('practice-delay').addEventListener('input', (e) => {
-        const val = parseInt(e.target.value);
-        AppState.settings.practiceDelay = val;
-        document.getElementById('practice-delay-val').innerText = `${(val/1000).toFixed(1)}s`;
-    });
-    document.getElementById('practice-delay').addEventListener('change', saveData);
+    document.getElementById('new-word-delay').addEventListener('change', saveData);
 
-    document.getElementById('rec-practice-delay').addEventListener('click', () => {
+    document.getElementById('rec-new-word-delay').addEventListener('click', () => {
         const val = 1000;
-        document.getElementById('practice-delay').value = val;
-        AppState.settings.practiceDelay = val;
-        document.getElementById('practice-delay-val').innerText = "1.0s";
-        saveData();
-    });
-
-    document.getElementById('practice-choices').addEventListener('input', (e) => {
-        const val = parseInt(e.target.value);
-        AppState.settings.practiceChoices = val;
-        document.getElementById('practice-choices-val').innerText = val;
-        if (!UI.practice.classList.contains('hidden')) {
-            loadPracticeWord(true);
-        }
-    });
-    document.getElementById('practice-choices').addEventListener('change', saveData);
-
-    document.getElementById('rec-practice-choices').addEventListener('click', () => {
-        const val = 9;
-        document.getElementById('practice-choices').value = val;
-        AppState.settings.practiceChoices = val;
-        document.getElementById('practice-choices-val').innerText = val;
-        if (!UI.practice.classList.contains('hidden')) {
-            loadPracticeWord(true);
-        }
-        saveData();
-    });
-
-    document.getElementById('rec-progress-speed').addEventListener('click', () => {
-        const val = 1000;
-        document.getElementById('progress-speed').value = val;
-        AppState.settings.progressSpeed = val;
-        document.getElementById('progress-speed-val').innerText = "1.0s";
+        document.getElementById('new-word-delay').value = val;
+        AppState.settings.newWordDelay = val;
+        document.getElementById('new-word-delay-val').innerText = "1.0s";
         saveData();
     });
 
@@ -875,7 +833,7 @@ function setupEventListeners() {
 
     document.getElementById('file-import').addEventListener('change', handleFileImport);
 
-    document.getElementById('btn-delete-all-data').addEventListener('click', () => {
+    document.getElementById('btn-delete-all-data-debug').addEventListener('click', () => {
         if (confirm("Are you sure you want to delete ALL statistics across ALL bundles? Settings will be preserved.")) {
             AppState.isDeleting = true;
             const dataToKeep = {
@@ -954,6 +912,18 @@ function setupEventListeners() {
     document.getElementById('btn-debug-disable').addEventListener('click', disableDebugMode);
     document.getElementById('btn-debug-recalibrate').addEventListener('click', recalibrateWeights);
     document.getElementById('btn-debug-randomize').addEventListener('click', randomizeBundleData);
+
+    document.getElementById('btn-toggle-debug-stats').addEventListener('click', () => {
+        const debugContent = document.getElementById('debug-content');
+        const toggleBtn = document.getElementById('btn-toggle-debug-stats');
+        if (debugContent.classList.contains('hidden')) {
+            debugContent.classList.remove('hidden');
+            toggleBtn.innerText = 'Hide Active Stats';
+        } else {
+            debugContent.classList.add('hidden');
+            toggleBtn.innerText = 'Show Active Stats';
+        }
+    });
 
     UI.statsBody.addEventListener('input', (e) => {
         if (!AppState.isStatsDebug) return;
@@ -1123,9 +1093,6 @@ function loadGlobalData() {
                 SpeechManager.setRandom(AppState.settings.randomVoice);
 
                 if (!AppState.settings.bgTheme) AppState.settings.bgTheme = 'bg-rainbow';
-                if (!AppState.settings.progressSpeed) AppState.settings.progressSpeed = 1000;
-                if (!AppState.settings.practiceDelay) AppState.settings.practiceDelay = 1000;
-                if (!AppState.settings.practiceChoices) AppState.settings.practiceChoices = 9;
                 if (!AppState.settings.practiceAnimSpeed) AppState.settings.practiceAnimSpeed = 1;
                 if (!AppState.settings.modeGridSize) AppState.settings.modeGridSize = 650;
                 if (!AppState.settings.wordlistCols) AppState.settings.wordlistCols = 6;
@@ -1134,10 +1101,18 @@ function loadGlobalData() {
                 if (AppState.settings.voiceVolume === undefined) AppState.settings.voiceVolume = 1;
                 if (AppState.settings.autoDownload === undefined) AppState.settings.autoDownload = true;
                 if (!AppState.settings.autoDownloadFrequency) AppState.settings.autoDownloadFrequency = 10;
-                if (AppState.settings.focusMode === undefined) AppState.settings.focusMode = false;
-                if (AppState.settings.disableBackground === undefined) AppState.settings.disableBackground = false;
-                if (!AppState.settings.disabledBgColor) AppState.settings.disabledBgColor = '#ffffff';
                 if (AppState.settings.autoCycleThemes === undefined) AppState.settings.autoCycleThemes = true;
+
+                // Migration for newWordDelay: derive from legacy progressSpeed, then practiceDelay, then default
+                if (!AppState.settings.newWordDelay) {
+                    if (AppState.settings.progressSpeed) {
+                        AppState.settings.newWordDelay = AppState.settings.progressSpeed;
+                    } else if (AppState.settings.practiceDelay) {
+                        AppState.settings.newWordDelay = AppState.settings.practiceDelay;
+                    } else {
+                        AppState.settings.newWordDelay = 1000;
+                    }
+                }
 
                 if (!AppState.settings.statsColumns) {
                     AppState.settings.statsColumns = {
@@ -1171,46 +1146,15 @@ function loadGlobalData() {
                 updateStatsColumnVisibility();
                 updatePracticeStatsColumnVisibility();
 
-                // Migration & Legacy Handling
-                if (AppState.settings.bgTheme === 'bg-dark-squares') AppState.settings.bgTheme = 'bg-dark-mode';
-                if (AppState.settings.bgTheme !== 'bg-dark-mode') {
-                    AppState.settings.autoCycleThemes = true;
-                }
+                // Migration & legacy handling
+                AppState.settings.bgTheme = normalizeBackgroundTheme(AppState.settings.bgTheme);
                 // Since dark mode toggle is removed, always enable auto-cycling themes.
                 AppState.settings.autoCycleThemes = true;
 
-                const disableBgInput = document.getElementById('disable-bg');
-                if(disableBgInput) {
-                    disableBgInput.checked = AppState.settings.disableBackground;
-                }
-
-                const focusModeInput = document.getElementById('focus-mode-toggle');
-                if(focusModeInput) {
-                    focusModeInput.checked = AppState.settings.focusMode;
-                }
-
-                const disabledBgColorInput = document.getElementById('disabled-bg-color');
-                if(disabledBgColorInput) {
-                    disabledBgColorInput.value = AppState.settings.disabledBgColor;
-                    document.documentElement.style.setProperty('--disabled-bg-color', AppState.settings.disabledBgColor);
-                }
-
-                const progInput = document.getElementById('progress-speed');
-                if(progInput) {
-                    progInput.value = AppState.settings.progressSpeed;
-                    document.getElementById('progress-speed-val').innerText = `${(AppState.settings.progressSpeed/1000).toFixed(1)}s`;
-                }
-
-                const pracDelayInput = document.getElementById('practice-delay');
-                if(pracDelayInput) {
-                    pracDelayInput.value = AppState.settings.practiceDelay;
-                    document.getElementById('practice-delay-val').innerText = `${(AppState.settings.practiceDelay/1000).toFixed(1)}s`;
-                }
-
-                const pracChoicesInput = document.getElementById('practice-choices');
-                if(pracChoicesInput) {
-                    pracChoicesInput.value = AppState.settings.practiceChoices;
-                    document.getElementById('practice-choices-val').innerText = AppState.settings.practiceChoices;
+                const newWordDelayInput = document.getElementById('new-word-delay');
+                if(newWordDelayInput) {
+                    newWordDelayInput.value = AppState.settings.newWordDelay;
+                    document.getElementById('new-word-delay-val').innerText = `${(AppState.settings.newWordDelay/1000).toFixed(1)}s`;
                 }
 
                 const colsInput = document.getElementById('wordlist-cols');
@@ -1261,18 +1205,19 @@ function loadGlobalData() {
 
                 const darkModeToggle = document.getElementById('dark-mode-toggle');
                 if (darkModeToggle) {
-                    darkModeToggle.checked = (AppState.settings.bgTheme === 'bg-dark-mode');
+                    darkModeToggle.checked = (AppState.settings.bgTheme === 'bg-dark-squares');
                 }
-
-                setTheme(AppState.settings.bgTheme);
-                toggleBackground(AppState.settings.disableBackground);
-
-                handleThemeCycle();
             }
         } catch (e) {
             console.error("Error loading saved data", e);
         }
     }
+
+    AppState.settings.bgTheme = normalizeBackgroundTheme(AppState.settings.bgTheme);
+    setTheme(AppState.settings.bgTheme);
+    toggleBackground(AppState.settings.disableBackground);
+    handleThemeCycle();
+
     updateTimestamp();
 }
 
@@ -1489,6 +1434,7 @@ function updateTimestamp() {
 }
 
 function setTheme(themeName) {
+    themeName = normalizeBackgroundTheme(themeName);
     AppState.settings.bgTheme = themeName;
     document.body.setAttribute('data-theme', themeName);
     
@@ -1545,6 +1491,7 @@ function crossfadeViews(fromView, toView, beforeShow = null) {
         toView.classList.remove('hidden');
         void toView.offsetWidth;
         toView.classList.add('fade-in');
+        updateDebugUI();
     }, duration);
 }
 
@@ -1738,16 +1685,19 @@ function renderModeSelect() {
                         AppState.vocabPage = 0;
                         setSelectorNavState('landing');
                         renderLandingPage();
+                        updateCurrentSectionDisplay('view-landing');
                     });
                 } else if (mode.action === 'ser-estar') {
                     crossfadeViews(UI.modeSelect, document.getElementById('view-ser-estar'), () => {
                         UI.mainContainer.classList.add('wide');
                         setSelectorNavState('ser-estar');
+                        updateCurrentSectionDisplay('view-ser-estar');
                     });
                 } else if (mode.action === 'para-por') {
                     crossfadeViews(UI.modeSelect, document.getElementById('view-para-por'), () => {
                         UI.mainContainer.classList.add('wide');
                         setSelectorNavState('para-por');
+                        updateCurrentSectionDisplay('view-para-por');
                     });
                 }
             };
@@ -1980,6 +1930,7 @@ function loadBundle(bundle) {
         renderWordlist();
         renderStats();
         switchView('view-wordlist');
+        updateDebugUI();
         loadNextWord();
     }, getViewFadeDuration());
 }
@@ -2101,6 +2052,7 @@ function switchView(viewId) {
             view.classList.remove('hidden');
             void view.offsetWidth; // Force reflow
             view.classList.add('fade-in');
+            updateDebugUI();
         };
 
         if (viewId === 'view-competitive') {
@@ -2117,6 +2069,84 @@ function switchView(viewId) {
             document.getElementById(viewId).classList.remove('hidden');
         }
     }
+    
+    // Update debug UI button state based on current view
+    updateDebugUI();
+    
+    // Update current section display
+    updateCurrentSectionDisplay(viewId);
+}
+
+function updateCurrentSectionDisplay(viewId) {
+    const sectionDisplay = document.getElementById('current-section-display');
+    if (!sectionDisplay) return;
+    
+    let displayText = 'Current Location: ';
+    
+    // Build breadcrumb based on current view and state
+    if (viewId === 'view-mode-select' || viewId === 'view-welcome') {
+        displayText += 'Home';
+    } else if (viewId === 'view-landing') {
+        displayText += 'Vocabulary > Topic Selection';
+    } else if (viewId === 'view-competitive' || viewId === 'view-wordlist' || viewId === 'view-stats') {
+        // Vocabulary-related views with bundle selected
+        displayText += 'Vocabulary';
+        
+        if (AppState.currentBundleId) {
+            const bundle = getAvailableBundles().find(b => b.id === AppState.currentBundleId);
+            const bundleName = bundle ? bundle.name : 'Unknown Topic';
+            
+            if (AppState.currentBundleId === getCustomVocabBundleId()) {
+                const customSelectedBundleIds = getCustomSelectedBundleIds();
+                if (customSelectedBundleIds.length > 0) {
+                    const bundleNames = customSelectedBundleIds
+                        .map(id => getAvailableBundles().find(b => b.id === id)?.name)
+                        .filter(Boolean);
+                    displayText += ` > Custom (${bundleNames.join(', ')})`;
+                } else {
+                    displayText += ' > Custom';
+                }
+            } else {
+                displayText += ` > ${bundleName}`;
+            }
+            
+            // Add the specific view type
+            const viewTypeMap = {
+                'view-competitive': 'Competitive',
+                'view-wordlist': 'Wordlist',
+                'view-stats': 'Statistics'
+            };
+            const viewType = viewTypeMap[viewId];
+            if (viewType) {
+                displayText += ` > ${viewType}`;
+            }
+        } else {
+            // Shouldn't happen but fallback
+            displayText += ' > Topic Selection';
+        }
+    } else if (viewId === 'view-practice' || viewId === 'view-practice-stats') {
+        displayText += 'Practice';
+        const viewTypeMap = {
+            'view-practice': 'Play',
+            'view-practice-stats': 'Statistics'
+        };
+        const viewType = viewTypeMap[viewId];
+        if (viewType) {
+            displayText += ` > ${viewType}`;
+        }
+    } else if (viewId === 'view-ser-estar' || viewId === 'se-practice' || viewId === 'se-competitive') {
+        displayText += 'Grammar > Ser/Estar';
+        if (viewId === 'se-practice') displayText += ' > Practice';
+        else if (viewId === 'se-competitive') displayText += ' > Competitive';
+    } else if (viewId === 'view-para-por' || viewId === 'pp-practice' || viewId === 'pp-competitive') {
+        displayText += 'Grammar > Para/Por';
+        if (viewId === 'pp-practice') displayText += ' > Practice';
+        else if (viewId === 'pp-competitive') displayText += ' > Competitive';
+    } else {
+        displayText += 'Unknown Section';
+    }
+    
+    sectionDisplay.textContent = displayText;
 }
 
 /* --- WORDLIST VIEW --- */
@@ -2773,38 +2803,27 @@ function resetControls() {
 }
 
 function enableDebugMode() {
-    // 1. If in Stats View
-    if (!UI.stats.classList.contains('hidden')) {
-        AppState.isStatsDebug = true;
-        renderStats();
+    if (!isDebugLocationEligible()) {
         updateDebugUI();
-        if (UI.debugContent) UI.debugContent.innerHTML = '<p><strong>Debug Mode Active</strong><br>Stats editing enabled.</p>';
         return;
     }
 
-    // 2. If in Wordlist View - Do nothing
-    if (!UI.wordlist.classList.contains('hidden')) {
-        return;
-    }
+    if (AppState.isTestWord) return;
 
-    // 3. If in Competitive View (or default)
-    if (!UI.competitive.classList.contains('hidden')) {
-        if (AppState.isTestWord) return;
-        
-        resetControls();
-        AppState.isLocked = false;
-        AppState.isTestWord = true;
-        AppState.testWordCounter = 1;
-        
-        UI.questionLabel.innerText = "DEBUG MODE";
-        UI.questionWord.innerText = "TESTING 1";
-        UI.input.placeholder = "Type TESTING 1...";
-        
-        if (!UI.testingContainer.classList.contains('hidden') && UI.debugContent) {
-            UI.debugContent.innerHTML = '<p><strong>Debug Mode Active</strong><br>Stats are disabled.</p>';
-        }
-        updateDebugUI();
+    resetControls();
+    AppState.isLocked = false;
+    AppState.isStatsDebug = false;
+    AppState.isTestWord = true;
+    AppState.testWordCounter = 1;
+
+    UI.questionLabel.innerText = "DEBUG MODE";
+    UI.questionWord.innerText = "TESTING 1";
+    UI.input.placeholder = "Type TESTING 1...";
+
+    if (!UI.testingContainer.classList.contains('hidden') && UI.debugContent) {
+        UI.debugContent.innerHTML = '<p><strong>Debug Mode Active</strong><br>Stats are disabled.</p>';
     }
+    updateDebugUI();
 }
 
 function disableDebugMode() {
@@ -2888,18 +2907,75 @@ function recalibrateWeights() {
     }
 }
 
+function isDebugLocationEligible() {
+    return !UI.competitive.classList.contains('hidden') && AppState.currentBundleId !== null;
+}
+
+function clearDebugStateForIneligibleLocation() {
+    const hadCompetitiveDebug = AppState.isTestWord;
+    const hadStatsDebug = AppState.isStatsDebug;
+
+    if (!hadCompetitiveDebug && !hadStatsDebug) return;
+
+    if (transitionTimer) clearTimeout(transitionTimer);
+    AppState.isTestWord = false;
+    AppState.isStatsDebug = false;
+
+    if (hadStatsDebug && !UI.stats.classList.contains('hidden')) {
+        renderStats();
+    }
+
+    if (hadCompetitiveDebug && AppState.currentBundleId && AppState.words.length > 0) {
+        loadNextWord();
+    }
+
+    if (UI.debugContent) {
+        UI.debugContent.innerHTML = '<p>Debug Mode Disabled</p>';
+    }
+}
+
 function updateDebugUI() {
     const enableBtn = document.getElementById('btn-debug-enable');
     const disableBtn = document.getElementById('btn-debug-disable');
+    const debugControls = document.getElementById('debug-controls');
+    const actionRow = document.getElementById('debug-action-row');
+    const locationMessage = document.getElementById('debug-location-message');
     if (!enableBtn || !disableBtn) return;
 
-    if (AppState.isTestWord || AppState.isStatsDebug) {
+    const isEligible = isDebugLocationEligible();
+
+    if (!isEligible) {
+        clearDebugStateForIneligibleLocation();
+    }
+
+    if (locationMessage) {
+        if (isEligible) {
+            locationMessage.classList.add('hidden');
+        } else {
+            locationMessage.classList.remove('hidden');
+            locationMessage.innerHTML = '<p><strong>Note:</strong> You must be in the Competitive mode of a wordlist to use the debug menu.</p>';
+        }
+    }
+
+    enableBtn.disabled = !isEligible;
+    disableBtn.disabled = !isEligible;
+    if (actionRow) {
+        actionRow.classList.toggle('debug-location-disabled', !isEligible);
+    }
+
+    if (isEligible && (AppState.isTestWord || AppState.isStatsDebug)) {
         enableBtn.classList.add('selected');
         disableBtn.classList.remove('selected');
+        if (debugControls) debugControls.classList.remove('debug-disabled');
     } else {
         enableBtn.classList.remove('selected');
         disableBtn.classList.add('selected');
+        if (debugControls) debugControls.classList.add('debug-disabled');
     }
+
+    enableBtn.style.opacity = '';
+    enableBtn.style.cursor = '';
+    enableBtn.style.pointerEvents = '';
 }
 
 let hintStage = 0;
@@ -3164,7 +3240,7 @@ function triggerTransition(type) {
     }
     UI.progressContainer.classList.remove('hidden');
     void UI.progressBar.offsetWidth; 
-    const duration = AppState.settings.progressSpeed || 2000;
+    const duration = AppState.settings.newWordDelay || 1000;
 
     UI.progressBar.style.transition = `width ${duration/1000}s linear`;
     UI.progressBar.style.width = '100%';
@@ -3722,7 +3798,7 @@ function initBackgroundParticles() {
         let colors = ['#f8e3cc', '#e2e8f0', '#fff5b1', '#e3f4f6', '#d0f0fd', '#ff9a9e', '#a18cd1', '#2ecc71', '#4a90e2'];
         let animName = 'confettiImplode';
 
-        if (AppState.settings.bgTheme === 'bg-dark-mode') {
+        if (AppState.settings.bgTheme === 'bg-dark-squares') {
             colors = ['#ff00ff', '#00ffff', '#39ff14', '#ffff00', '#ff1493', '#00ff99'];
             animName = 'squareFloat';
         }
