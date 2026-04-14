@@ -31,4 +31,3 @@ This is an early MVP with core learning flow in place and limited feature depth.
 - Improve stats and progress UX
 - Add richer learning modes
 - Revisit account management later
-- Implement ser / esta and para / por 

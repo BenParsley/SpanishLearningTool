@@ -42,3 +42,8 @@
         -   User must click Enable in eligible location before debug controls become active
     -   Hid the positive debug note in eligible location and kept only the warning message for ineligible locations.
     -   Fixed a timing issue where Debug Enable could remain grayed out during Competitive view transitions; eligibility is now re-evaluated when the view is shown.
+
+14/04/2026 - Panamanian phrase data cleanup and settings/debug refinements
+    -   Panamanian-Specific Terms bundle created.
+    -   Set Wordlist Columns to default to 6 on first page load, including a CSS fallback of 6 columns.
+    -   Moved Active Stats so it appears directly under the Show/Hide Active Stats button in the General settings section.

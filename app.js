@@ -10,6 +10,7 @@ const AppState = {
     practiceSpanishPrompt: null,
     isTestWord: false,
     isStatsDebug: false,
+    isActiveStatsVisible: false,
     testWordCounter: 1,
     isLocked: false, 
     isDeleting: false,
@@ -918,9 +919,12 @@ function setupEventListeners() {
         const toggleBtn = document.getElementById('btn-toggle-debug-stats');
         if (debugContent.classList.contains('hidden')) {
             debugContent.classList.remove('hidden');
+            AppState.isActiveStatsVisible = true;
             toggleBtn.innerText = 'Hide Active Stats';
+            renderDebugInfo();
         } else {
             debugContent.classList.add('hidden');
+            AppState.isActiveStatsVisible = false;
             toggleBtn.innerText = 'Show Active Stats';
         }
     });
@@ -1157,13 +1161,6 @@ function loadGlobalData() {
                     document.getElementById('new-word-delay-val').innerText = `${(AppState.settings.newWordDelay/1000).toFixed(1)}s`;
                 }
 
-                const colsInput = document.getElementById('wordlist-cols');
-                if(colsInput) {
-                    colsInput.value = AppState.settings.wordlistCols;
-                    document.getElementById('wordlist-cols-val').innerText = AppState.settings.wordlistCols;
-                    document.documentElement.style.setProperty('--wordlist-cols', AppState.settings.wordlistCols);
-                }
-
                 const modeGridSizeInput = document.getElementById('mode-grid-size');
                 if (modeGridSizeInput) {
                     modeGridSizeInput.value = AppState.settings.modeGridSize;
@@ -1214,6 +1211,16 @@ function loadGlobalData() {
     }
 
     AppState.settings.bgTheme = normalizeBackgroundTheme(AppState.settings.bgTheme);
+
+    const normalizedWordlistCols = Math.max(1, Math.min(6, parseInt(AppState.settings.wordlistCols, 10) || 6));
+    AppState.settings.wordlistCols = normalizedWordlistCols;
+    const colsInput = document.getElementById('wordlist-cols');
+    if (colsInput) {
+        colsInput.value = normalizedWordlistCols;
+        document.getElementById('wordlist-cols-val').innerText = normalizedWordlistCols;
+    }
+    document.documentElement.style.setProperty('--wordlist-cols', normalizedWordlistCols);
+
     setTheme(AppState.settings.bgTheme);
     toggleBackground(AppState.settings.disableBackground);
     handleThemeCycle();
@@ -3599,6 +3606,10 @@ function renderStats() {
 function renderDebugInfo() {
     if (UI.testingContainer.classList.contains('hidden')) return;
     if (!UI.debugContent) return;
+    if (!AppState.isActiveStatsVisible || !isDebugLocationEligible()) {
+        UI.debugContent.innerHTML = '';
+        return;
+    }
     if (AppState.currentWordIndex === null || !AppState.words[AppState.currentWordIndex]) {
         UI.debugContent.innerHTML = '<p>No word loaded</p>';
         return;

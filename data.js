@@ -233,13 +233,56 @@ const rawFillerWords = formatBundle('Filler Words', [
     ["That being said", "Dicho esto"]
 ]);
 
+
+const rawPanamanianPhrases = formatBundle('Panamanian-Specific Terms', [
+    ["What's up?", "Qué sopa | Que lo que"],
+    ["Sure", "Dale pues"],
+    ["Okay", "Ofi"],
+    ["A lot", "Buco"],
+    ["Head", "Chonta"],
+    ["Friend", "Fren"],
+    ["Beer", "Pinta"],
+    ["Car", "Nave"],
+    ["Thing", "Vaina"],
+    ["Fancy person | Posh", "Yeye"],
+    ["Junk food", "Burundanga"],
+    ["No money | Broke", "Tas limpio"],
+    ["House", "Chaintin"],
+    ["Tell me the gossip", "Cuéntame la cocoa"],
+    ["Blond", "Fulo"],
+    ["A slap", "Soplampco"],
+    ["Devil bus", "Diablo rojo"],
+    ["Dumb person", "Awebado"],
+    ["Low life | Homeless person", "Un piedrero"],
+    ["Lazy person", "Bulto"],
+    ["Low quality", "Panga"],
+    ["Cousin", "Mopri"],
+    ["Music", "Plena"],
+    ["To greet", "Chotear"],
+    ["To text", "Chatear"],
+    ["To dodge | To avoid", "Chifear"],
+    ["Check this out", "Pilla"],
+    ["To joke around | To tease", "Bacilar"],
+    ["You crushed it | Above expectations", "La botaste"],
+    ["Great food", "Rantan"],
+    ["Messy situation", "Arroz con mango"],
+    ["I forgot", "Chuleta"],
+    ["Take care", "Cuídate pues"],
+    ["Looking good", "Bien tallao"],
+    ["I'm tired", "Estoy tiaro"],
+    ["Unexpected situation", "Qué ponchera"]
+]);
+
+
+
 const CUSTOM_VOCAB_BUNDLE_ID = 'bundle_custom_vocab';
 const BASE_VOCAB_BUNDLE_IDS = ['bundle_1', 'bundle_2', 'bundle_3', 'bundle_4'];
 const CATEGORY_TO_BUNDLE_ID = {
     'Body Part': 'bundle_1',
     'Animals': 'bundle_2',
     'Emotions': 'bundle_3',
-    'Filler Words': 'bundle_4'
+    'Filler Words': 'bundle_4',
+    'Panamanian Phrases': 'bundle_5'
 };
 
 const availableBundles = [
@@ -247,5 +290,6 @@ const availableBundles = [
     { id: 'bundle_1', name: 'Body Parts', data: rawBodyParts },
     { id: 'bundle_2', name: 'Animals', data: rawAnimals },
     { id: 'bundle_3', name: 'Emotions', data: rawEmotions },
-    { id: 'bundle_4', name: 'Filler Words', data: rawFillerWords }
+    { id: 'bundle_4', name: 'Filler Words', data: rawFillerWords },
+    { id: 'bundle_5', name: 'Panamanian Phrases', data: rawPanamanianPhrases }
 ];
