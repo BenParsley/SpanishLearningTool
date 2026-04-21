@@ -378,6 +378,17 @@ function setParaPorPanel(panelId) {
     updateCurrentSectionDisplay(normalizedPanelId);
 }
 
+function setAquiAllaPanel(panelId) {
+    const normalizedPanelId = panelId === 'aq-competitive' ? 'aq-competitive' : 'aq-practice';
+    document.querySelectorAll('.aq-tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.panel === normalizedPanelId);
+    });
+    document.querySelectorAll('.aq-panel').forEach(panel => {
+        panel.classList.toggle('hidden', panel.id !== normalizedPanelId);
+    });
+    updateCurrentSectionDisplay(normalizedPanelId);
+}
+
 /* --- INITIALIZATION --- */
 window.addEventListener('DOMContentLoaded', () => {
     loadGlobalData();
@@ -491,6 +502,16 @@ function setupEventListeners() {
                 return;
             }
 
+            const aquiAllaView = document.getElementById('view-aqui-alla');
+            const isAquiAllaActive = !!aquiAllaView && !aquiAllaView.classList.contains('hidden');
+            if (isAquiAllaActive && (target === 'aq-practice' || target === 'aq-competitive')) {
+                setAquiAllaPanel(target);
+                document.querySelectorAll('.tab-btn').forEach(tab => {
+                    tab.classList.toggle('active', tab.dataset.target === target);
+                });
+                return;
+            }
+
             if (target === 'view-competitive') {
                 const currentView = document.querySelector('.view:not(.hidden)');
                 if (currentView && currentView.id === 'view-competitive') {
@@ -538,6 +559,13 @@ function setupEventListeners() {
         btn.addEventListener('click', (e) => {
             const panelId = e.currentTarget.dataset.panel;
             setParaPorPanel(panelId);
+        });
+    });
+
+    document.querySelectorAll('.aq-tab-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const panelId = e.currentTarget.dataset.panel;
+            setAquiAllaPanel(panelId);
         });
     });
 
@@ -640,6 +668,15 @@ function setupEventListeners() {
         const paraPorView = document.getElementById('view-para-por');
         if (paraPorView && !paraPorView.classList.contains('hidden')) {
             crossfadeViews(paraPorView, UI.modeSelect, () => {
+                setSelectorNavState('mode');
+                updateCurrentSectionDisplay('view-mode-select');
+            });
+            return;
+        }
+
+        const aquiAllaView = document.getElementById('view-aqui-alla');
+        if (aquiAllaView && !aquiAllaView.classList.contains('hidden')) {
+            crossfadeViews(aquiAllaView, UI.modeSelect, () => {
                 setSelectorNavState('mode');
                 updateCurrentSectionDisplay('view-mode-select');
             });
@@ -1640,6 +1677,41 @@ function setSelectorNavState(state) {
 
         if (seTabBar) seTabBar.classList.remove('hidden');
         if (ppTabBar) ppTabBar.classList.add('hidden');
+        const aqTabBar = document.querySelector('#view-aqui-alla .aq-tab-bar');
+        if (aqTabBar) aqTabBar.classList.remove('hidden');
+        if (backBtn) {
+            backBtn.textContent = '←';
+            backBtn.classList.remove('mode-placeholder');
+            backBtn.disabled = false;
+        }
+        return;
+    }
+
+    if (state === 'aqui-alla') {
+        UI.mainContainer.classList.add('wide');
+        UI.nav.classList.remove('mode-nav-muted');
+        if (leftGroup) leftGroup.style.display = '';
+        if (leftGroup) leftGroup.style.visibility = '';
+        if (centerGroup) centerGroup.style.display = '';
+        if (rightGroup) rightGroup.style.display = '';
+        if (rightGroup) rightGroup.style.visibility = '';
+
+        setMainTabConfig('Practice', 'aq-practice', 'Competitive', 'aq-competitive');
+        tabButtons.forEach((btn) => {
+            btn.style.display = '';
+            btn.classList.remove('active');
+        });
+        if (tabButtons[0]) tabButtons[0].classList.add('active');
+        if (navSelectorTitle) {
+            navSelectorTitle.classList.add('hidden');
+            navSelectorTitle.textContent = '';
+        }
+        setAquiAllaPanel('aq-practice');
+
+        if (seTabBar) seTabBar.classList.remove('hidden');
+        if (ppTabBar) ppTabBar.classList.remove('hidden');
+        const aqTabBar = document.querySelector('#view-aqui-alla .aq-tab-bar');
+        if (aqTabBar) aqTabBar.classList.add('hidden');
         if (backBtn) {
             backBtn.textContent = '←';
             backBtn.classList.remove('mode-placeholder');
@@ -1650,6 +1722,8 @@ function setSelectorNavState(state) {
 
     if (seTabBar) seTabBar.classList.remove('hidden');
     if (ppTabBar) ppTabBar.classList.remove('hidden');
+    const aqTabBarDefault = document.querySelector('#view-aqui-alla .aq-tab-bar');
+    if (aqTabBarDefault) aqTabBarDefault.classList.remove('hidden');
 
     UI.nav.classList.remove('mode-nav-muted');
     if (leftGroup) leftGroup.style.display = '';
@@ -1670,7 +1744,8 @@ function renderModeSelect() {
     const modesPage0 = [
         { name: 'Vocabulary', active: true, action: 'vocabulary' },
         { name: 'SER or ESTAR', active: true, action: 'ser-estar' },
-        { name: 'PARA or POR', active: true, action: 'para-por' }
+        { name: 'PARA or POR', active: true, action: 'para-por' },
+        { name: 'Locational Phrasing', active: true, action: 'aqui-alla' }
     ];
     while (modesPage0.length < 9) {
         modesPage0.push({ name: '', active: false });
@@ -1705,6 +1780,12 @@ function renderModeSelect() {
                         UI.mainContainer.classList.add('wide');
                         setSelectorNavState('para-por');
                         updateCurrentSectionDisplay('view-para-por');
+                    });
+                } else if (mode.action === 'aqui-alla') {
+                    crossfadeViews(UI.modeSelect, document.getElementById('view-aqui-alla'), () => {
+                        UI.mainContainer.classList.add('wide');
+                        setSelectorNavState('aqui-alla');
+                        updateCurrentSectionDisplay('view-aqui-alla');
                     });
                 }
             };
@@ -1983,7 +2064,7 @@ function switchView(viewId) {
 
     document.querySelectorAll('.view').forEach(v => {
         v.classList.add('hidden');
-        if (v.id === 'view-stats' || v.id === 'view-wordlist' || v.id === 'view-competitive' || v.id === 'view-practice' || v.id === 'view-landing' || v.id === 'view-practice-stats' || v.id === 'view-mode-select' || v.id === 'view-welcome' || v.id === 'view-ser-estar' || v.id === 'view-para-por') {
+        if (v.id === 'view-stats' || v.id === 'view-wordlist' || v.id === 'view-competitive' || v.id === 'view-practice' || v.id === 'view-landing' || v.id === 'view-practice-stats' || v.id === 'view-mode-select' || v.id === 'view-welcome' || v.id === 'view-ser-estar' || v.id === 'view-para-por' || v.id === 'view-aqui-alla') {
             v.classList.remove('fade-in');
             v.style.transition = '';
         }
@@ -2149,6 +2230,10 @@ function updateCurrentSectionDisplay(viewId) {
         displayText += 'Grammar > Para/Por';
         if (viewId === 'pp-practice') displayText += ' > Practice';
         else if (viewId === 'pp-competitive') displayText += ' > Competitive';
+    } else if (viewId === 'view-aqui-alla' || viewId === 'aq-practice' || viewId === 'aq-competitive') {
+        displayText += 'Grammar > Locational Phrasing';
+        if (viewId === 'aq-practice') displayText += ' > Practice';
+        else if (viewId === 'aq-competitive') displayText += ' > Competitive';
     } else {
         displayText += 'Unknown Section';
     }

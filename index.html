@@ -228,7 +228,7 @@
 
                         <div class="se-card">
                             <div class="se-card-header ser-header">
-                                <span class="se-card-verb">SER</span>
+                                <span class="se-card-verb speak-word" onclick="speakSpanish('ser')">SER</span>
                                 <span class="se-card-mnemonic">D.O.C.T.O.R.</span>
                             </div>
                             <p class="se-card-desc">Use <strong>SER</strong> for permanent or defining characteristics. Remember the <strong>DOCTOR</strong> acronym:</p>
@@ -286,7 +286,7 @@
 
                         <div class="se-card">
                             <div class="se-card-header estar-header">
-                                <span class="se-card-verb">ESTAR</span>
+                                <span class="se-card-verb speak-word" onclick="speakSpanish('estar')">ESTAR</span>
                                 <span class="se-card-mnemonic">P.L.A.C.E.</span>
                             </div>
                             <p class="se-card-desc">Use <strong>ESTAR</strong> for temporary states and conditions. Remember the <strong>PLACE</strong> acronym:</p>
@@ -359,7 +359,7 @@
 
                         <div class="pp-card">
                             <div class="pp-card-header para-header">
-                                <span class="pp-card-verb">PARA</span>
+                                <span class="pp-card-verb speak-word" onclick="speakSpanish('para')">PARA</span>
                                 <span class="pp-card-mnemonic">P.E.R.F.E.C.T.</span>
                             </div>
                             <p class="pp-card-desc">Use <strong>PARA</strong> for destination, purpose, recipients, deadlines, and point-of-view ideas. Remember <strong>PERFECT</strong>:</p>
@@ -425,7 +425,7 @@
 
                         <div class="pp-card">
                             <div class="pp-card-header por-header">
-                                <span class="pp-card-verb">POR</span>
+                                <span class="pp-card-verb speak-word" onclick="speakSpanish('por')">POR</span>
                                 <span class="pp-card-mnemonic">D.R.E.A.M.</span>
                             </div>
                             <p class="pp-card-desc">Use <strong>POR</strong> for duration, reason, exchange, movement through/around, and means. Remember <strong>DREAM</strong>:</p>
@@ -478,6 +478,82 @@
             </div>
 
             <div id="pp-competitive" class="pp-panel hidden">
+                <div class="se-construction">
+                    <div class="se-construction-icon">🚧</div>
+                    <h2>Competitive Mode Under Construction</h2>
+                    <p>This section is still being built. Coming soon.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-aqui-alla" class="view hidden">
+            <div class="aq-tab-bar">
+                <button class="aq-tab-btn active" data-panel="aq-practice">Practice</button>
+                <button class="aq-tab-btn" data-panel="aq-competitive">Competitive</button>
+            </div>
+
+            <div id="aq-practice" class="aq-panel">
+                <div class="aq-content-scroll">
+
+                    <!-- ZONE 1: Near the Speaker -->
+                    <div class="aq-zone">
+                        <div class="aq-zone-header near-header">
+                            <span class="aq-zone-title">Near the Speaker</span>
+                            <span class="aq-zone-hint">aquí &amp; acá</span>
+                        </div>
+                        <div class="aq-word-row">
+                            <div class="aq-word-card">
+                                <span class="aq-word-name near-name speak-word" onclick="speakSpanish('aquí')">aquí</span>
+                                <p class="aq-word-desc">Points to a precise, fixed spot right next to you. Use it when referring to an exact location where you or something near you is.</p>
+                                <p class="aq-word-example">El libro está aquí. — <em>The book is right here.</em></p>
+                            </div>
+                            <div class="aq-word-card">
+                                <span class="aq-word-name near-name speak-word" onclick="speakSpanish('acá')">acá</span>
+                                <p class="aq-word-desc">A looser "here" that suggests movement toward you rather than a fixed point. Paired with motion verbs like <em>ven</em> to invite someone to come to where you are.</p>
+                                <p class="aq-word-example">Ven acá, por favor. — <em>Come here, please.</em></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ZONE 2: Near the Listener -->
+                    <div class="aq-zone">
+                        <div class="aq-zone-header listener-header">
+                            <span class="aq-zone-title">Near the Listener</span>
+                            <span class="aq-zone-hint">ahí</span>
+                        </div>
+                        <div class="aq-word-row">
+                            <div class="aq-word-card">
+                                <span class="aq-word-name listener-name speak-word" onclick="speakSpanish('ahí')">ahí</span>
+                                <p class="aq-word-desc">Points to a location near the person you are speaking to, not where you are. Use it for the middle ground between yourself and somewhere far away.</p>
+                                <p class="aq-word-example">El gato está ahí, a tu lado. — <em>The cat is there, next to you.</em></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ZONE 3: Far from Both -->
+                    <div class="aq-zone">
+                        <div class="aq-zone-header far-header">
+                            <span class="aq-zone-title">Far from Both</span>
+                            <span class="aq-zone-hint">allí &amp; allá</span>
+                        </div>
+                        <div class="aq-word-row">
+                            <div class="aq-word-card">
+                                <span class="aq-word-name far-name speak-word" onclick="speakSpanish('allí')">allí</span>
+                                <p class="aq-word-desc">Points to a specific, identifiable location that is far from both you and the person you are speaking to. Use it when you can pinpoint exactly where something is.</p>
+                                <p class="aq-word-example">La tienda está allí. — <em>The store is over there.</em></p>
+                            </div>
+                            <div class="aq-word-card">
+                                <span class="aq-word-name far-name speak-word" onclick="speakSpanish('allá')">allá</span>
+                                <p class="aq-word-desc">A looser "over there" that implies movement away from you toward a general far direction. Paired with motion verbs like <em>vete</em> to send someone toward a distant area.</p>
+                                <p class="aq-word-example">Vete allá y espérame. — <em>Go over there and wait for me.</em></p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div id="aq-competitive" class="aq-panel hidden">
                 <div class="se-construction">
                     <div class="se-construction-icon">🚧</div>
                     <h2>Competitive Mode Under Construction</h2>
