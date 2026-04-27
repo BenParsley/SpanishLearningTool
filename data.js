@@ -282,7 +282,7 @@ const CATEGORY_TO_BUNDLE_ID = {
     'Animals': 'bundle_2',
     'Emotions': 'bundle_3',
     'Filler Words': 'bundle_4',
-    'Panamanian Phrases': 'bundle_5'
+    'Panamanian-Specific Terms': 'bundle_5'
 };
 
 const availableBundles = [

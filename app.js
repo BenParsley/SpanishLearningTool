@@ -27,16 +27,18 @@ const AppState = {
     settings: {
         voiceGender: 'male',
         randomVoice: true,
+        audioShortcut: 'Alt+P',
         voiceVolume: 1,
         strictAccents: true,
         requireInvertedPunctuation: false,
+        requireApostrophe: false,
         bgTheme: 'bg-rainbow',
         autoCycleThemes: true,
         newWordDelay: 1000,
         practiceAnimSpeed: 1,
         modeGridSize: 650,
         wordlistCols: 6,
-        animSpeed: 1.2,
+        animSpeed: 1,
         animPreset: '1',
         autoDownload: true,
         autoDownloadFrequency: 10,
@@ -181,12 +183,27 @@ function getViewResizeDuration() {
     return 600 * getAnimDurMult() / getAnimationSpeed();
 }
 
+function getVocabPageSize() {
+    return 9;
+}
+
+function getMaxVocabPage() {
+    const totalBundles = getAvailableBundles().length;
+    return Math.max(0, Math.ceil(totalBundles / getVocabPageSize()) - 1);
+}
+
 function getAvailableBundles() {
     return typeof availableBundles !== 'undefined' ? availableBundles : [];
 }
 
 function getCustomVocabBundleId() {
     return typeof CUSTOM_VOCAB_BUNDLE_ID !== 'undefined' ? CUSTOM_VOCAB_BUNDLE_ID : 'bundle_custom_vocab';
+}
+
+function getSelectableCustomBundleIds() {
+    return getAvailableBundles()
+        .filter(bundle => bundle && bundle.id !== getCustomVocabBundleId())
+        .map(bundle => bundle.id);
 }
 
 function getBaseVocabBundleIds() {
@@ -253,7 +270,8 @@ function copyCompetitiveStats(sourceWord, targetWord) {
 
 function getCustomSelectedBundleIds() {
     if (!Array.isArray(AppState.customSelectedBundleIds)) return [];
-    return AppState.customSelectedBundleIds.filter(id => getBaseVocabBundleIds().includes(id));
+    const selectableIds = new Set(getSelectableCustomBundleIds());
+    return AppState.customSelectedBundleIds.filter(id => selectableIds.has(id));
 }
 
 function isBundleSelectedForCustom(bundleId) {
@@ -261,7 +279,8 @@ function isBundleSelectedForCustom(bundleId) {
 }
 
 function toggleCustomBundleSelection(bundleId) {
-    if (!getBaseVocabBundleIds().includes(bundleId)) return;
+    const selectableIds = new Set(getSelectableCustomBundleIds());
+    if (!selectableIds.has(bundleId)) return;
     if (isBundleSelectedForCustom(bundleId)) {
         AppState.customSelectedBundleIds = getCustomSelectedBundleIds().filter(id => id !== bundleId);
     } else {
@@ -303,7 +322,7 @@ function syncCompetitiveStatsToMirrorBundles(sourceWord) {
     if (AppState.currentBundleId === customBundleId) {
         const categoryBundleId = getCategoryBundleId(sourceWord.category);
         if (categoryBundleId) targetBundleIds.push(categoryBundleId);
-    } else if (getBaseVocabBundleIds().includes(AppState.currentBundleId)) {
+    } else if (getSelectableCustomBundleIds().includes(AppState.currentBundleId)) {
         targetBundleIds.push(customBundleId);
     }
 
@@ -349,6 +368,101 @@ function speakSpanish(text) {
     SpeechManager.speak(sanitized);
 }
 
+function normalizeShortcutKey(key) {
+    if (!key || typeof key !== 'string') return '';
+    const trimmed = key.trim();
+    if (!trimmed) return '';
+    if (trimmed === ' ') return 'Space';
+    if (trimmed.length === 1) return trimmed.toUpperCase();
+
+    const aliasMap = {
+        control: 'Ctrl',
+        ctrl: 'Ctrl',
+        alt: 'Alt',
+        shift: 'Shift',
+        meta: 'Meta',
+        cmd: 'Meta',
+        command: 'Meta',
+        spacebar: 'Space',
+        esc: 'Escape',
+        del: 'Delete',
+        plus: '+'
+    };
+
+    const lower = trimmed.toLowerCase();
+    if (aliasMap[lower]) return aliasMap[lower];
+    return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+}
+
+function normalizeShortcut(shortcut) {
+    if (!shortcut || typeof shortcut !== 'string') return '';
+
+    const parts = shortcut
+        .split('+')
+        .map(part => normalizeShortcutKey(part))
+        .filter(Boolean);
+
+    if (parts.length === 0) return '';
+
+    const modifierOrder = ['Ctrl', 'Alt', 'Shift', 'Meta'];
+    const modifiers = [];
+    let mainKey = '';
+
+    parts.forEach(part => {
+        if (modifierOrder.includes(part)) {
+            if (!modifiers.includes(part)) modifiers.push(part);
+        } else if (!mainKey) {
+            mainKey = part;
+        }
+    });
+
+    if (!mainKey && modifiers.length > 0) {
+        mainKey = modifiers.pop();
+    }
+
+    const orderedModifiers = modifierOrder.filter(mod => modifiers.includes(mod));
+    return [...orderedModifiers, mainKey].filter(Boolean).join('+');
+}
+
+function eventToShortcut(event) {
+    const parts = [];
+    if (event.ctrlKey) parts.push('Ctrl');
+    if (event.altKey) parts.push('Alt');
+    if (event.shiftKey) parts.push('Shift');
+    if (event.metaKey) parts.push('Meta');
+    parts.push(normalizeShortcutKey(event.key));
+    return normalizeShortcut(parts.join('+'));
+}
+
+function getAudioShortcut() {
+    return normalizeShortcut(AppState.settings.audioShortcut || 'Alt+P') || 'Alt+P';
+}
+
+function isAudioShortcutPressed(event) {
+    return eventToShortcut(event) === getAudioShortcut();
+}
+
+function shouldIgnoreAudioShortcut(event) {
+    const active = document.activeElement;
+    if (active && active.id === 'audio-shortcut') return true;
+    const isTypingField = active && (
+        active.tagName === 'INPUT' ||
+        active.tagName === 'TEXTAREA' ||
+        active.isContentEditable
+    );
+    if (!isTypingField) return false;
+    return !(event.ctrlKey || event.altKey || event.metaKey);
+}
+
+function playCurrentQuestionAudio() {
+    if (UI.competitive.classList.contains('hidden')) return;
+    if (AppState.isTestWord || AppState.currentDirection !== 'es-to-en') return;
+
+    const word = AppState.words[AppState.currentWordIndex];
+    if (!word) return;
+    speakSpanish(AppState.currentSpanishPrompt || word.es);
+}
+
 function pickRandomAlternative(alternatives, fallback = '') {
     if (Array.isArray(alternatives) && alternatives.length > 0) {
         return alternatives[Math.floor(Math.random() * alternatives.length)];
@@ -356,36 +470,144 @@ function pickRandomAlternative(alternatives, fallback = '') {
     return fallback;
 }
 
-function setSerEstarPanel(panelId) {
-    const normalizedPanelId = panelId === 'se-competitive' ? 'se-competitive' : 'se-practice';
+function setSerEstarPanel(panelId, instant = false) {
+    const validPanels = ['se-competitive', 'se-additional'];
+    const normalizedPanelId = validPanels.includes(panelId) ? panelId : 'se-practice';
+    const currentPanel = document.querySelector('.se-panel:not(.hidden)');
+    const nextPanel = document.getElementById(normalizedPanelId);
     document.querySelectorAll('.se-tab-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.panel === normalizedPanelId);
     });
-    document.querySelectorAll('.se-panel').forEach(panel => {
-        panel.classList.toggle('hidden', panel.id !== normalizedPanelId);
-    });
+    if (!instant && currentPanel && currentPanel !== nextPanel) {
+        const currentBanner = currentPanel.querySelector('.under-construction-banner.banner-slid-in');
+        const doSwitch = () => {
+            currentPanel.classList.remove('panel-fade-in');
+            const fadeDuration = getViewFadeDuration();
+            setTimeout(() => {
+                currentPanel.classList.add('hidden');
+                if (nextPanel) {
+                    nextPanel.classList.remove('hidden');
+                    void nextPanel.offsetWidth;
+                    nextPanel.classList.add('panel-fade-in');
+                    const nextBanner = nextPanel.querySelector('.under-construction-banner');
+                    if (nextBanner) {
+                        setTimeout(() => nextBanner.classList.add('banner-slid-in'), fadeDuration);
+                    }
+                }
+            }, fadeDuration);
+        };
+        if (currentBanner) {
+            currentBanner.classList.remove('banner-slid-in');
+            setTimeout(doSwitch, getScaledDuration(300));
+        } else {
+            doSwitch();
+        }
+    } else {
+        document.querySelectorAll('.se-panel').forEach(panel => {
+            panel.classList.toggle('hidden', panel.id !== normalizedPanelId);
+            panel.classList.remove('panel-fade-in');
+            const banner = panel.querySelector('.under-construction-banner');
+            if (banner) banner.classList.remove('banner-slid-in');
+        });
+        if (nextPanel) {
+            void nextPanel.offsetWidth;
+            nextPanel.classList.add('panel-fade-in');
+        }
+    }
     updateCurrentSectionDisplay(normalizedPanelId);
 }
 
-function setParaPorPanel(panelId) {
-    const normalizedPanelId = panelId === 'pp-competitive' ? 'pp-competitive' : 'pp-practice';
+function setParaPorPanel(panelId, instant = false) {
+    const validPanels = ['pp-competitive', 'pp-additional'];
+    const normalizedPanelId = validPanels.includes(panelId) ? panelId : 'pp-practice';
+    const currentPanel = document.querySelector('.pp-panel:not(.hidden)');
+    const nextPanel = document.getElementById(normalizedPanelId);
     document.querySelectorAll('.pp-tab-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.panel === normalizedPanelId);
     });
-    document.querySelectorAll('.pp-panel').forEach(panel => {
-        panel.classList.toggle('hidden', panel.id !== normalizedPanelId);
-    });
+    if (!instant && currentPanel && currentPanel !== nextPanel) {
+        const currentBanner = currentPanel.querySelector('.under-construction-banner.banner-slid-in');
+        const doSwitch = () => {
+            currentPanel.classList.remove('panel-fade-in');
+            const fadeDuration = getViewFadeDuration();
+            setTimeout(() => {
+                currentPanel.classList.add('hidden');
+                if (nextPanel) {
+                    nextPanel.classList.remove('hidden');
+                    void nextPanel.offsetWidth;
+                    nextPanel.classList.add('panel-fade-in');
+                    const nextBanner = nextPanel.querySelector('.under-construction-banner');
+                    if (nextBanner) {
+                        setTimeout(() => nextBanner.classList.add('banner-slid-in'), fadeDuration);
+                    }
+                }
+            }, fadeDuration);
+        };
+        if (currentBanner) {
+            currentBanner.classList.remove('banner-slid-in');
+            setTimeout(doSwitch, getScaledDuration(300));
+        } else {
+            doSwitch();
+        }
+    } else {
+        document.querySelectorAll('.pp-panel').forEach(panel => {
+            panel.classList.toggle('hidden', panel.id !== normalizedPanelId);
+            panel.classList.remove('panel-fade-in');
+            const banner = panel.querySelector('.under-construction-banner');
+            if (banner) banner.classList.remove('banner-slid-in');
+        });
+        if (nextPanel) {
+            void nextPanel.offsetWidth;
+            nextPanel.classList.add('panel-fade-in');
+        }
+    }
     updateCurrentSectionDisplay(normalizedPanelId);
 }
 
-function setAquiAllaPanel(panelId) {
-    const normalizedPanelId = panelId === 'aq-competitive' ? 'aq-competitive' : 'aq-practice';
+function setAquiAllaPanel(panelId, instant = false) {
+    const validPanels = ['aq-competitive', 'aq-additional'];
+    const normalizedPanelId = validPanels.includes(panelId) ? panelId : 'aq-practice';
+    const currentPanel = document.querySelector('.aq-panel:not(.hidden)');
+    const nextPanel = document.getElementById(normalizedPanelId);
     document.querySelectorAll('.aq-tab-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.panel === normalizedPanelId);
     });
-    document.querySelectorAll('.aq-panel').forEach(panel => {
-        panel.classList.toggle('hidden', panel.id !== normalizedPanelId);
-    });
+    if (!instant && currentPanel && currentPanel !== nextPanel) {
+        const currentBanner = currentPanel.querySelector('.under-construction-banner.banner-slid-in');
+        const doSwitch = () => {
+            currentPanel.classList.remove('panel-fade-in');
+            const fadeDuration = getViewFadeDuration();
+            setTimeout(() => {
+                currentPanel.classList.add('hidden');
+                if (nextPanel) {
+                    nextPanel.classList.remove('hidden');
+                    void nextPanel.offsetWidth;
+                    nextPanel.classList.add('panel-fade-in');
+                    const nextBanner = nextPanel.querySelector('.under-construction-banner');
+                    if (nextBanner) {
+                        setTimeout(() => nextBanner.classList.add('banner-slid-in'), fadeDuration);
+                    }
+                }
+            }, fadeDuration);
+        };
+        if (currentBanner) {
+            currentBanner.classList.remove('banner-slid-in');
+            setTimeout(doSwitch, getScaledDuration(300));
+        } else {
+            doSwitch();
+        }
+    } else {
+        document.querySelectorAll('.aq-panel').forEach(panel => {
+            panel.classList.toggle('hidden', panel.id !== normalizedPanelId);
+            panel.classList.remove('panel-fade-in');
+            const banner = panel.querySelector('.under-construction-banner');
+            if (banner) banner.classList.remove('banner-slid-in');
+        });
+        if (nextPanel) {
+            void nextPanel.offsetWidth;
+            nextPanel.classList.add('panel-fade-in');
+        }
+    }
     updateCurrentSectionDisplay(normalizedPanelId);
 }
 
@@ -469,7 +691,7 @@ function setupEventListeners() {
 
     if (UI.vocabPageNext) {
         UI.vocabPageNext.addEventListener('click', () => {
-            if (AppState.vocabPage < 1) {
+            if (AppState.vocabPage < getMaxVocabPage()) {
                 swipeGrid(UI.bundleGrid, 'left', () => {
                     AppState.vocabPage += 1;
                     renderLandingPage();
@@ -486,7 +708,7 @@ function setupEventListeners() {
             const paraPorView = document.getElementById('view-para-por');
             const isParaPorActive = !!paraPorView && !paraPorView.classList.contains('hidden');
 
-            if (isSerEstarActive && (target === 'se-practice' || target === 'se-competitive')) {
+            if (isSerEstarActive && (target === 'se-practice' || target === 'se-competitive' || target === 'se-additional')) {
                 setSerEstarPanel(target);
                 document.querySelectorAll('.tab-btn').forEach(tab => {
                     tab.classList.toggle('active', tab.dataset.target === target);
@@ -494,7 +716,7 @@ function setupEventListeners() {
                 return;
             }
 
-            if (isParaPorActive && (target === 'pp-practice' || target === 'pp-competitive')) {
+            if (isParaPorActive && (target === 'pp-practice' || target === 'pp-competitive' || target === 'pp-additional')) {
                 setParaPorPanel(target);
                 document.querySelectorAll('.tab-btn').forEach(tab => {
                     tab.classList.toggle('active', tab.dataset.target === target);
@@ -504,7 +726,7 @@ function setupEventListeners() {
 
             const aquiAllaView = document.getElementById('view-aqui-alla');
             const isAquiAllaActive = !!aquiAllaView && !aquiAllaView.classList.contains('hidden');
-            if (isAquiAllaActive && (target === 'aq-practice' || target === 'aq-competitive')) {
+            if (isAquiAllaActive && (target === 'aq-practice' || target === 'aq-competitive' || target === 'aq-additional')) {
                 setAquiAllaPanel(target);
                 document.querySelectorAll('.tab-btn').forEach(tab => {
                     tab.classList.toggle('active', tab.dataset.target === target);
@@ -748,12 +970,48 @@ function setupEventListeners() {
         saveData();
     });
 
+    document.getElementById('require-apostrophe').addEventListener('change', (e) => {
+        AppState.settings.requireApostrophe = e.target.checked;
+        saveData();
+    });
+
     document.getElementById('new-word-delay').addEventListener('input', (e) => {
         const val = parseInt(e.target.value);
         AppState.settings.newWordDelay = val;
         document.getElementById('new-word-delay-val').innerText = `${(val/1000).toFixed(1)}s`;
     });
     document.getElementById('new-word-delay').addEventListener('change', saveData);
+
+    const audioShortcutInput = document.getElementById('audio-shortcut');
+    if (audioShortcutInput) {
+        audioShortcutInput.value = getAudioShortcut();
+
+        audioShortcutInput.addEventListener('keydown', (e) => {
+            const ignoredKeys = ['Tab', 'Escape'];
+            if (ignoredKeys.includes(e.key)) return;
+
+            e.preventDefault();
+
+            if (e.key === 'Backspace' || e.key === 'Delete') {
+                AppState.settings.audioShortcut = '';
+                audioShortcutInput.value = '';
+                saveData();
+                return;
+            }
+
+            const shortcut = eventToShortcut(e);
+            const disallowedShortcuts = ['Ctrl', 'Alt', 'Shift', 'Meta'];
+            if (!shortcut || disallowedShortcuts.includes(shortcut)) return;
+
+            AppState.settings.audioShortcut = shortcut;
+            audioShortcutInput.value = shortcut;
+            saveData();
+        });
+
+        audioShortcutInput.addEventListener('blur', () => {
+            audioShortcutInput.value = getAudioShortcut();
+        });
+    }
 
     document.getElementById('rec-new-word-delay').addEventListener('click', () => {
         const val = 1000;
@@ -896,13 +1154,7 @@ function setupEventListeners() {
         }
     });
 
-    UI.questionAudioBtn.addEventListener('click', () => {
-        if (AppState.isTestWord) return;
-        if (AppState.currentDirection === 'es-to-en') {
-            const word = AppState.words[AppState.currentWordIndex];
-            speakSpanish(AppState.currentSpanishPrompt || word.es);
-        }
-    });
+    UI.questionAudioBtn.addEventListener('click', playCurrentQuestionAudio);
 
     UI.practiceAudio.addEventListener('click', () => {
         if (AppState.practiceDirection === 'es-to-en') {
@@ -930,6 +1182,12 @@ function setupEventListeners() {
     });
 
     document.addEventListener('keydown', (e) => {
+        if (isAudioShortcutPressed(e) && !shouldIgnoreAudioShortcut(e)) {
+            e.preventDefault();
+            playCurrentQuestionAudio();
+            return;
+        }
+
         if (UI.competitive.classList.contains('hidden')) return;
         
         if (e.key === 'Enter') {
@@ -964,6 +1222,50 @@ function setupEventListeners() {
             AppState.isActiveStatsVisible = false;
             toggleBtn.innerText = 'Show Active Stats';
         }
+    });
+
+    // Collapsible settings groups
+    const SETTINGS_COLLAPSE_KEY = 'settingsGroupCollapsed';
+    function loadCollapsedGroups() {
+        try { return JSON.parse(localStorage.getItem(SETTINGS_COLLAPSE_KEY)) || {}; } catch { return {}; }
+    }
+    function saveCollapsedGroups(state) {
+        localStorage.setItem(SETTINGS_COLLAPSE_KEY, JSON.stringify(state));
+    }
+    function applyGroupCollapse(groupEl, collapsed, animate) {
+        const body = groupEl.querySelector('.settings-group-body');
+        if (!body) return;
+        if (collapsed) {
+            if (!animate) {
+                groupEl.classList.add('collapsed');
+                body.style.maxHeight = '0px';
+            } else {
+                body.style.maxHeight = body.scrollHeight + 'px';
+                requestAnimationFrame(() => {
+                    body.style.maxHeight = '0px';
+                    groupEl.classList.add('collapsed');
+                });
+            }
+        } else {
+            groupEl.classList.remove('collapsed');
+            body.style.maxHeight = body.scrollHeight + 'px';
+            const onEnd = () => { body.style.maxHeight = ''; body.removeEventListener('transitionend', onEnd); };
+            body.addEventListener('transitionend', onEnd);
+        }
+    }
+    const collapsedState = loadCollapsedGroups();
+    document.querySelectorAll('.settings-group h3[data-group]').forEach(h3 => {
+        const group = h3.dataset.group;
+        const groupEl = h3.closest('.settings-group');
+        const isCollapsed = !!collapsedState[group];
+        applyGroupCollapse(groupEl, isCollapsed, false);
+        h3.addEventListener('click', () => {
+            const nowCollapsed = groupEl.classList.contains('collapsed');
+            applyGroupCollapse(groupEl, !nowCollapsed, true);
+            const state = loadCollapsedGroups();
+            state[group] = !nowCollapsed;
+            saveCollapsedGroups(state);
+        });
     });
 
     UI.statsBody.addEventListener('input', (e) => {
@@ -1002,10 +1304,16 @@ function triggerExport(isAuto = false) {
     const downloadAnchorNode = document.createElement('a');
     
     const now = new Date();
-    const dateStr = now.toISOString().split('T')[0];
-    const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
-    
-    const fileName = `LearningApp_FullBackup - ${dateStr} - ${timeStr}.json`;
+    const pad2 = (n) => String(n).padStart(2, '0');
+    const day = pad2(now.getDate());
+    const month = pad2(now.getMonth() + 1);
+    const hours = pad2(now.getHours());
+    const minutes = pad2(now.getMinutes());
+    const seconds = pad2(now.getSeconds());
+
+    const fileName = isAuto
+        ? `data - ${day}:${month} ${hours}:${minutes}:${seconds}.json`
+        : `[manual] LearningApp_FullBackup - ${now.toISOString().split('T')[0]} - ${now.toTimeString().split(' ')[0].replace(/:/g, '-')}.json`;
     
     downloadAnchorNode.setAttribute("href", dataStr);
     downloadAnchorNode.setAttribute("download", fileName);
@@ -1125,17 +1433,21 @@ function loadGlobalData() {
                 AppState.settings = data.settings;
                 if (AppState.settings.randomVoice === undefined) AppState.settings.randomVoice = true;
                 if (AppState.settings.requireInvertedPunctuation === undefined) AppState.settings.requireInvertedPunctuation = false;
+                if (AppState.settings.requireApostrophe === undefined) AppState.settings.requireApostrophe = false;
+                if (AppState.settings.audioShortcut === undefined) AppState.settings.audioShortcut = 'Alt+P';
                 updateVoiceUI();
                 const strictCheck = document.getElementById('strict-accents');
                 if(strictCheck) strictCheck.checked = AppState.settings.strictAccents;
                 const invertedPunctuationCheck = document.getElementById('require-inverted-punctuation');
                 if (invertedPunctuationCheck) invertedPunctuationCheck.checked = AppState.settings.requireInvertedPunctuation;
+                const apostropheCheck = document.getElementById('require-apostrophe');
+                if (apostropheCheck) apostropheCheck.checked = AppState.settings.requireApostrophe;
                 SpeechManager.setGender(AppState.settings.voiceGender);
                 SpeechManager.setRandom(AppState.settings.randomVoice);
 
                 if (!AppState.settings.bgTheme) AppState.settings.bgTheme = 'bg-rainbow';
                 if (!AppState.settings.practiceAnimSpeed) AppState.settings.practiceAnimSpeed = 1;
-                if (!AppState.settings.modeGridSize) AppState.settings.modeGridSize = 650;
+                if (!AppState.settings.modeGridSize || AppState.settings.modeGridSize === 550) AppState.settings.modeGridSize = 650;
                 if (!AppState.settings.wordlistCols) AppState.settings.wordlistCols = 6;
                 if (!AppState.settings.animSpeed) AppState.settings.animSpeed = 1.2;
                 AppState.settings.animPreset = '1';
@@ -1226,6 +1538,11 @@ function loadGlobalData() {
                     randomVoiceInput.checked = AppState.settings.randomVoice;
                 }
 
+                const audioShortcutInput = document.getElementById('audio-shortcut');
+                if (audioShortcutInput) {
+                    audioShortcutInput.value = getAudioShortcut();
+                }
+
                 const autoDownloadInput = document.getElementById('auto-download');
                 if(autoDownloadInput) {
                     autoDownloadInput.checked = AppState.settings.autoDownload;
@@ -1248,6 +1565,7 @@ function loadGlobalData() {
     }
 
     AppState.settings.bgTheme = normalizeBackgroundTheme(AppState.settings.bgTheme);
+    AppState.settings.audioShortcut = getAudioShortcut();
 
     const normalizedWordlistCols = Math.max(1, Math.min(6, parseInt(AppState.settings.wordlistCols, 10) || 6));
     AppState.settings.wordlistCols = normalizedWordlistCols;
@@ -1560,7 +1878,7 @@ function setSelectorNavState(state) {
     const seTabBar = document.querySelector('#view-ser-estar .se-tab-bar');
     const ppTabBar = document.querySelector('#view-para-por .pp-tab-bar');
 
-    const setMainTabConfig = (firstLabel, firstTarget, secondLabel, secondTarget) => {
+    const setMainTabConfig = (firstLabel, firstTarget, secondLabel, secondTarget, thirdLabel, thirdTarget) => {
         if (tabButtons[0]) {
             tabButtons[0].textContent = firstLabel;
             tabButtons[0].dataset.target = firstTarget;
@@ -1569,12 +1887,22 @@ function setSelectorNavState(state) {
             tabButtons[1].textContent = secondLabel;
             tabButtons[1].dataset.target = secondTarget;
         }
+        if (tabButtons[2]) {
+            if (thirdLabel && thirdTarget) {
+                tabButtons[2].textContent = thirdLabel;
+                tabButtons[2].dataset.target = thirdTarget;
+                tabButtons[2].style.display = '';
+            } else {
+                tabButtons[2].style.display = 'none';
+            }
+        }
     };
 
     const showTabs = () => {
         setMainTabConfig('Wordlist', 'view-wordlist', 'Competitive', 'view-competitive');
-        tabButtons.forEach((btn) => {
-            btn.style.display = '';
+        tabButtons.forEach((btn, i) => {
+            if (i < 2) btn.style.display = '';
+            else btn.style.display = 'none';
         });
         if (navSelectorTitle) {
             navSelectorTitle.classList.add('hidden');
@@ -1632,7 +1960,7 @@ function setSelectorNavState(state) {
         if (rightGroup) rightGroup.style.display = '';
         if (rightGroup) rightGroup.style.visibility = '';
 
-        setMainTabConfig('Practice', 'se-practice', 'Competitive', 'se-competitive');
+        setMainTabConfig('Practice', 'se-practice', 'Additional Practice', 'se-additional', 'Competitive', 'se-competitive');
         tabButtons.forEach((btn) => {
             btn.style.display = '';
             btn.classList.remove('active');
@@ -1642,7 +1970,7 @@ function setSelectorNavState(state) {
             navSelectorTitle.classList.add('hidden');
             navSelectorTitle.textContent = '';
         }
-        setSerEstarPanel('se-practice');
+        setSerEstarPanel('se-practice', true);
 
         if (seTabBar) seTabBar.classList.add('hidden');
         if (ppTabBar) ppTabBar.classList.remove('hidden');
@@ -1663,7 +1991,7 @@ function setSelectorNavState(state) {
         if (rightGroup) rightGroup.style.display = '';
         if (rightGroup) rightGroup.style.visibility = '';
 
-        setMainTabConfig('Practice', 'pp-practice', 'Competitive', 'pp-competitive');
+        setMainTabConfig('Practice', 'pp-practice', 'Additional Practice', 'pp-additional', 'Competitive', 'pp-competitive');
         tabButtons.forEach((btn) => {
             btn.style.display = '';
             btn.classList.remove('active');
@@ -1673,7 +2001,7 @@ function setSelectorNavState(state) {
             navSelectorTitle.classList.add('hidden');
             navSelectorTitle.textContent = '';
         }
-        setParaPorPanel('pp-practice');
+        setParaPorPanel('pp-practice', true);
 
         if (seTabBar) seTabBar.classList.remove('hidden');
         if (ppTabBar) ppTabBar.classList.add('hidden');
@@ -1696,7 +2024,7 @@ function setSelectorNavState(state) {
         if (rightGroup) rightGroup.style.display = '';
         if (rightGroup) rightGroup.style.visibility = '';
 
-        setMainTabConfig('Practice', 'aq-practice', 'Competitive', 'aq-competitive');
+        setMainTabConfig('Practice', 'aq-practice', 'Additional Practice', 'aq-additional', 'Competitive', 'aq-competitive');
         tabButtons.forEach((btn) => {
             btn.style.display = '';
             btn.classList.remove('active');
@@ -1706,7 +2034,7 @@ function setSelectorNavState(state) {
             navSelectorTitle.classList.add('hidden');
             navSelectorTitle.textContent = '';
         }
-        setAquiAllaPanel('aq-practice');
+        setAquiAllaPanel('aq-practice', true);
 
         if (seTabBar) seTabBar.classList.remove('hidden');
         if (ppTabBar) ppTabBar.classList.remove('hidden');
@@ -1743,6 +2071,7 @@ function renderModeSelect() {
     UI.modeGrid.innerHTML = '';
     const modesPage0 = [
         { name: 'Vocabulary', active: true, action: 'vocabulary' },
+        { name: '', active: false },
         { name: 'SER or ESTAR', active: true, action: 'ser-estar' },
         { name: 'PARA or POR', active: true, action: 'para-por' },
         { name: 'Locational Phrasing', active: true, action: 'aqui-alla' }
@@ -1801,7 +2130,12 @@ function renderLandingPage() {
     UI.bundleGrid.innerHTML = '';
     const savedJSON = localStorage.getItem('wordBundleStats');
     const savedData = savedJSON ? JSON.parse(savedJSON) : {};
-    const selectableBundles = AppState.vocabPage === 0 ? getAvailableBundles().slice(0, 6) : [];
+    const allBundles = getAvailableBundles();
+    const totalSlots = getVocabPageSize();
+    const maxPage = getMaxVocabPage();
+    if (AppState.vocabPage > maxPage) AppState.vocabPage = maxPage;
+    const start = AppState.vocabPage * totalSlots;
+    const selectableBundles = allBundles.slice(start, start + totalSlots);
 
     selectableBundles.forEach((bundle, index) => {
         const btn = document.createElement('button');
@@ -1815,7 +2149,7 @@ function renderLandingPage() {
                 }
             }
 
-            if (AppState.isCustomSelectionMode && !isCustomBundle && getBaseVocabBundleIds().includes(bundle.id)) {
+            if (AppState.isCustomSelectionMode && !isCustomBundle && getSelectableCustomBundleIds().includes(bundle.id)) {
                 btn.classList.add('bundle-btn-selectable');
                 if (isBundleSelectedForCustom(bundle.id)) {
                     btn.classList.add('bundle-btn-selected');
@@ -1952,7 +2286,7 @@ function renderLandingPage() {
                     return;
                 }
 
-                if (AppState.isCustomSelectionMode && getBaseVocabBundleIds().includes(bundle.id)) {
+                if (AppState.isCustomSelectionMode && getSelectableCustomBundleIds().includes(bundle.id)) {
                     toggleCustomBundleSelection(bundle.id);
                     renderLandingPage();
                     return;
@@ -1967,8 +2301,7 @@ function renderLandingPage() {
         UI.bundleGrid.appendChild(btn);
     });
 
-    // Always show 9 slots (3x3): page 1 is all placeholders
-    const totalSlots = 9;
+    // Keep a fixed 3x3 grid with placeholders for empty slots.
     for (let i = selectableBundles.length; i < totalSlots; i++) {
         const btn = document.createElement('button');
         btn.className = 'bundle-btn';
@@ -1978,7 +2311,7 @@ function renderLandingPage() {
     }
 
     if (UI.vocabPagePrev) UI.vocabPagePrev.disabled = AppState.vocabPage === 0;
-    if (UI.vocabPageNext) UI.vocabPageNext.disabled = AppState.vocabPage === 1;
+    if (UI.vocabPageNext) UI.vocabPageNext.disabled = AppState.vocabPage >= maxPage;
 }
 
 function loadBundle(bundle) {
@@ -3140,7 +3473,7 @@ function skipWord() {
     triggerTransition('wrong');
 }
 
-function normalizeForComparison(text, ignoreAccents, ignoreInvertedPunctuation, normalizeBoundaryPairs = false) {
+function normalizeForComparison(text, ignoreAccents, ignoreInvertedPunctuation, normalizeBoundaryPairs = false, ignoreApostrophe = false) {
     let normalized = text.trim();
     if (normalizeBoundaryPairs) {
         if (normalized.endsWith('?') && !normalized.startsWith('¿')) {
@@ -3152,6 +3485,9 @@ function normalizeForComparison(text, ignoreAccents, ignoreInvertedPunctuation, 
     }
     if (ignoreInvertedPunctuation) {
         normalized = normalized.replace(/[¿¡]/g, '');
+    }
+    if (ignoreApostrophe) {
+        normalized = normalized.replace(/['''`]/g, '');
     }
     if (ignoreAccents) {
         normalized = normalized.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -3203,10 +3539,11 @@ function submitAnswer() {
     
     const ignoreInvertedPunctuation = !AppState.settings.requireInvertedPunctuation;
     const normalizeBoundaryPairs = AppState.settings.requireInvertedPunctuation;
-    const strictUser = normalizeForComparison(userVal, false, ignoreInvertedPunctuation, normalizeBoundaryPairs);
-    const strictUserNoBrackets = normalizeForComparison(userWithoutBrackets, false, ignoreInvertedPunctuation, normalizeBoundaryPairs);
-    const normUser = normalizeForComparison(userVal, true, ignoreInvertedPunctuation, normalizeBoundaryPairs);
-    const normUserNoBrackets = normalizeForComparison(userWithoutBrackets, true, ignoreInvertedPunctuation, normalizeBoundaryPairs);
+    const ignoreApostrophe = !AppState.settings.requireApostrophe;
+    const strictUser = normalizeForComparison(userVal, false, ignoreInvertedPunctuation, normalizeBoundaryPairs, ignoreApostrophe);
+    const strictUserNoBrackets = normalizeForComparison(userWithoutBrackets, false, ignoreInvertedPunctuation, normalizeBoundaryPairs, ignoreApostrophe);
+    const normUser = normalizeForComparison(userVal, true, ignoreInvertedPunctuation, normalizeBoundaryPairs, ignoreApostrophe);
+    const normUserNoBrackets = normalizeForComparison(userWithoutBrackets, true, ignoreInvertedPunctuation, normalizeBoundaryPairs, ignoreApostrophe);
     
     let strictMatch = false;
     let looseMatch = false;
@@ -3220,8 +3557,8 @@ function submitAnswer() {
         const candidates = optionalTarget && optionalTarget !== t ? [t, optionalTarget] : [t];
 
         for (const candidate of candidates) {
-            const strictTarget = normalizeForComparison(candidate, false, ignoreInvertedPunctuation, normalizeBoundaryPairs);
-            const normTarget = normalizeForComparison(candidate, true, ignoreInvertedPunctuation, normalizeBoundaryPairs);
+            const strictTarget = normalizeForComparison(candidate, false, ignoreInvertedPunctuation, normalizeBoundaryPairs, ignoreApostrophe);
+            const normTarget = normalizeForComparison(candidate, true, ignoreInvertedPunctuation, normalizeBoundaryPairs, ignoreApostrophe);
 
             if (strictUser === strictTarget || strictUserNoBrackets === strictTarget) {
                 strictMatch = true;

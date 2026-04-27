@@ -1,3 +1,17 @@
+27/04/2026 - Multi-bundle selection, settings UX, and export naming updates
+    -   Fixed Multi-Bundle selection so any available bundle (including future-added bundles) can be selected, not just the original base set.
+    -   Fixed Panamanian phrase mapping so Panamanian-Specific Terms are correctly recognized/selectable in Multi-Bundle.
+    -   Updated vocabulary page navigation bounds to scale with total bundle count.
+    -   Added a configurable keyboard shortcut for question audio playback (default: Alt+P).
+    -   Added a Require Apostrophe setting that applies to both English and Spanish answer checking.
+    -   Refined settings panel UX:
+        -   Added collapsible settings groups (with remembered collapse state).
+        -   Moved UI Animation Speed into the Timing group.
+        -   Switched Strict Accents, Inverted Punctuation, and Apostrophes to inline checkbox layout.
+    -   Updated export file naming:
+        -   Manual Download button exports are prefixed with [manual].
+        -   Auto-download exports now use: data - dd:mm hh:mm:ss.
+
 21/04/2026 - Locational Phrasing topic added  ⚠ NOT TESTED
     -   Added a new "Locational Phrasing" topic to the mode-select grid.
     -   Practice tab contains 3 color-coded horizontal zones, each spanning full width:
