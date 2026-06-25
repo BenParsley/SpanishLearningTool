@@ -16,6 +16,12 @@
         <button id="quick-save-btn">Save Now</button>
     </div>
 
+    <div id="storage-warning" class="hidden">
+        <span id="storage-warning-text"></span>
+        <button id="storage-warning-export" onclick="triggerExport(false)">Download Backup</button>
+        <button id="storage-warning-dismiss" onclick="document.getElementById('storage-warning').classList.add('hidden')" title="Dismiss">✕</button>
+    </div>
+
     <div id="bg-wrapper">
         <div class="bg-layer active"></div>
         <div class="bg-layer"></div>
@@ -23,6 +29,8 @@
     </div>
 
     <div id="layout-wrapper">
+
+
         <main class="main-container">
             
         <nav id="app-nav" class="hidden">
@@ -72,6 +80,14 @@
                 <button id="vocab-page-prev" class="pager-btn">&#8592;</button>
                 <div class="bundle-grid" id="bundle-grid"></div>
                 <button id="vocab-page-next" class="pager-btn">&#8594;</button>
+            </div>
+        </section>
+
+        <section id="view-infinitive-verb-landing" class="view hidden">
+            <div class="pager-layout">
+                <button id="infinitive-verb-page-prev" class="pager-btn">&#8592;</button>
+                <div class="bundle-grid" id="infinitive-verb-bundle-grid"></div>
+                <button id="infinitive-verb-page-next" class="pager-btn">&#8594;</button>
             </div>
         </section>
 
@@ -219,8 +235,7 @@
 
         <section id="view-ser-estar" class="view hidden">
             <div class="se-tab-bar">
-                <button class="se-tab-btn active" data-panel="se-practice">Practice</button>
-                <button class="se-tab-btn" data-panel="se-additional">Additional Practice</button>
+                <button class="se-tab-btn active" data-panel="se-practice">Practice <span class="se-tab-subtitle">(Prediction Types)</span></button>
                 <button class="se-tab-btn" data-panel="se-competitive">Competitive</button>
             </div>
 
@@ -341,165 +356,115 @@
             </div>
 
             <div id="se-competitive" class="se-panel hidden">
-                <div class="under-construction-banner">🚧 Under Construction — content may be incomplete or change.</div>
-            </div>
+                <div class="se-comp-subnav">
+                    <button class="se-comp-nav-btn active" data-section="play">Play</button>
+                    <button class="se-comp-nav-btn" data-section="stats">Statistics</button>
+                </div>
 
-            <div id="se-additional" class="se-panel hidden">
-                <div class="under-construction-banner">🚧 Under Construction — content may be incomplete or change.</div>
-                <div class="conj-scroll">
-                    <div class="conj-two-col">
+                <div id="se-comp-play" class="se-comp-section">
+                    <div id="se-comp-question-area">
+                        <div class="se-comp-label-row">
+                            <p id="se-comp-label">Choose the correct conjugation:</p>
+                            <label class="se-toggle-label" title="Show or hide the English translation">
+                                <input type="checkbox" id="se-show-english-toggle" checked>
+                                <span>Show English</span>
+                            </label>
+                            <button id="se-comp-audio-btn" title="Play Audio"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button>
+                        </div>
+                        <div class="se-comp-phrase-row">
+                            <div id="se-comp-phrase">Loading...</div>
+                        </div>
+                        <div id="se-comp-translation"></div>
+                        <div id="se-comp-feedback"></div>
+                        <div id="se-comp-streak-wrapper" class="hidden">
+                            <div id="se-comp-streak-fill"></div>
+                        </div>
+                    </div>
 
-                        <!-- SER CONJUGATIONS -->
-                        <div class="conj-col">
-                            <div class="conj-col-header ser-header">SER</div>
-
-                            <div class="conj-tense-block">
-                                <div class="conj-tense-header">Present (Presente)</div>
-                                <table class="conj-table">
-                                    <tr><td class="conj-pronoun">yo</td><td class="conj-form ser-form">soy</td></tr>
-                                    <tr><td class="conj-pronoun">tú</td><td class="conj-form ser-form">eres</td></tr>
-                                    <tr><td class="conj-pronoun">él / ella / Ud.</td><td class="conj-form ser-form">es</td></tr>
-                                    <tr><td class="conj-pronoun">nosotros</td><td class="conj-form ser-form">somos</td></tr>
-                                    <tr><td class="conj-pronoun">ellos / ellas / Uds.</td><td class="conj-form ser-form">son</td></tr>
-                                </table>
-                            </div>
-
-                            <div class="conj-tense-block">
-                                <div class="conj-tense-header">Preterite (Pretérito)</div>
-                                <table class="conj-table">
-                                    <tr><td class="conj-pronoun">yo</td><td class="conj-form ser-form">fui</td></tr>
-                                    <tr><td class="conj-pronoun">tú</td><td class="conj-form ser-form">fuiste</td></tr>
-                                    <tr><td class="conj-pronoun">él / ella / Ud.</td><td class="conj-form ser-form">fue</td></tr>
-                                    <tr><td class="conj-pronoun">nosotros</td><td class="conj-form ser-form">fuimos</td></tr>
-                                    <tr><td class="conj-pronoun">ellos / ellas / Uds.</td><td class="conj-form ser-form">fueron</td></tr>
-                                </table>
-                            </div>
-
-                            <div class="conj-tense-block">
-                                <div class="conj-tense-header">Imperfect (Imperfecto)</div>
-                                <table class="conj-table">
-                                    <tr><td class="conj-pronoun">yo</td><td class="conj-form ser-form">era</td></tr>
-                                    <tr><td class="conj-pronoun">tú</td><td class="conj-form ser-form">eras</td></tr>
-                                    <tr><td class="conj-pronoun">él / ella / Ud.</td><td class="conj-form ser-form">era</td></tr>
-                                    <tr><td class="conj-pronoun">nosotros</td><td class="conj-form ser-form">éramos</td></tr>
-                                    <tr><td class="conj-pronoun">ellos / ellas / Uds.</td><td class="conj-form ser-form">eran</td></tr>
-                                </table>
-                            </div>
-
-                            <div class="conj-tense-block">
-                                <div class="conj-tense-header">Future (Futuro)</div>
-                                <table class="conj-table">
-                                    <tr><td class="conj-pronoun">yo</td><td class="conj-form ser-form">seré</td></tr>
-                                    <tr><td class="conj-pronoun">tú</td><td class="conj-form ser-form">serás</td></tr>
-                                    <tr><td class="conj-pronoun">él / ella / Ud.</td><td class="conj-form ser-form">será</td></tr>
-                                    <tr><td class="conj-pronoun">nosotros</td><td class="conj-form ser-form">seremos</td></tr>
-                                    <tr><td class="conj-pronoun">ellos / ellas / Uds.</td><td class="conj-form ser-form">serán</td></tr>
-                                </table>
-                            </div>
-
-                            <div class="conj-tense-block">
-                                <div class="conj-tense-header">Conditional (Condicional)</div>
-                                <table class="conj-table">
-                                    <tr><td class="conj-pronoun">yo</td><td class="conj-form ser-form">sería</td></tr>
-                                    <tr><td class="conj-pronoun">tú</td><td class="conj-form ser-form">serías</td></tr>
-                                    <tr><td class="conj-pronoun">él / ella / Ud.</td><td class="conj-form ser-form">sería</td></tr>
-                                    <tr><td class="conj-pronoun">nosotros</td><td class="conj-form ser-form">seríamos</td></tr>
-                                    <tr><td class="conj-pronoun">ellos / ellas / Uds.</td><td class="conj-form ser-form">serían</td></tr>
-                                </table>
-                            </div>
-
-                            <div class="conj-tense-block">
-                                <div class="conj-tense-header">Present Subjunctive (Subjuntivo)</div>
-                                <table class="conj-table">
-                                    <tr><td class="conj-pronoun">yo</td><td class="conj-form ser-form">sea</td></tr>
-                                    <tr><td class="conj-pronoun">tú</td><td class="conj-form ser-form">seas</td></tr>
-                                    <tr><td class="conj-pronoun">él / ella / Ud.</td><td class="conj-form ser-form">sea</td></tr>
-                                    <tr><td class="conj-pronoun">nosotros</td><td class="conj-form ser-form">seamos</td></tr>
-                                    <tr><td class="conj-pronoun">ellos / ellas / Uds.</td><td class="conj-form ser-form">sean</td></tr>
-                                </table>
-                            </div>
+                    <div id="se-comp-action-area">
+                        <div id="se-comp-conj-area">
+                            <div id="se-comp-conj-buttons"></div>
                         </div>
 
-                        <!-- ESTAR CONJUGATIONS -->
-                        <div class="conj-col">
-                            <div class="conj-col-header estar-header">ESTAR</div>
-
-                            <div class="conj-tense-block">
-                                <div class="conj-tense-header">Present (Presente)</div>
-                                <table class="conj-table">
-                                    <tr><td class="conj-pronoun">yo</td><td class="conj-form estar-form">estoy</td></tr>
-                                    <tr><td class="conj-pronoun">tú</td><td class="conj-form estar-form">estás</td></tr>
-                                    <tr><td class="conj-pronoun">él / ella / Ud.</td><td class="conj-form estar-form">está</td></tr>
-                                    <tr><td class="conj-pronoun">nosotros</td><td class="conj-form estar-form">estamos</td></tr>
-                                    <tr><td class="conj-pronoun">ellos / ellas / Uds.</td><td class="conj-form estar-form">están</td></tr>
-                                </table>
-                            </div>
-
-                            <div class="conj-tense-block">
-                                <div class="conj-tense-header">Preterite (Pretérito)</div>
-                                <table class="conj-table">
-                                    <tr><td class="conj-pronoun">yo</td><td class="conj-form estar-form">estuve</td></tr>
-                                    <tr><td class="conj-pronoun">tú</td><td class="conj-form estar-form">estuviste</td></tr>
-                                    <tr><td class="conj-pronoun">él / ella / Ud.</td><td class="conj-form estar-form">estuvo</td></tr>
-                                    <tr><td class="conj-pronoun">nosotros</td><td class="conj-form estar-form">estuvimos</td></tr>
-                                    <tr><td class="conj-pronoun">ellos / ellas / Uds.</td><td class="conj-form estar-form">estuvieron</td></tr>
-                                </table>
-                            </div>
-
-                            <div class="conj-tense-block">
-                                <div class="conj-tense-header">Imperfect (Imperfecto)</div>
-                                <table class="conj-table">
-                                    <tr><td class="conj-pronoun">yo</td><td class="conj-form estar-form">estaba</td></tr>
-                                    <tr><td class="conj-pronoun">tú</td><td class="conj-form estar-form">estabas</td></tr>
-                                    <tr><td class="conj-pronoun">él / ella / Ud.</td><td class="conj-form estar-form">estaba</td></tr>
-                                    <tr><td class="conj-pronoun">nosotros</td><td class="conj-form estar-form">estábamos</td></tr>
-                                    <tr><td class="conj-pronoun">ellos / ellas / Uds.</td><td class="conj-form estar-form">estaban</td></tr>
-                                </table>
-                            </div>
-
-                            <div class="conj-tense-block">
-                                <div class="conj-tense-header">Future (Futuro)</div>
-                                <table class="conj-table">
-                                    <tr><td class="conj-pronoun">yo</td><td class="conj-form estar-form">estaré</td></tr>
-                                    <tr><td class="conj-pronoun">tú</td><td class="conj-form estar-form">estarás</td></tr>
-                                    <tr><td class="conj-pronoun">él / ella / Ud.</td><td class="conj-form estar-form">estará</td></tr>
-                                    <tr><td class="conj-pronoun">nosotros</td><td class="conj-form estar-form">estaremos</td></tr>
-                                    <tr><td class="conj-pronoun">ellos / ellas / Uds.</td><td class="conj-form estar-form">estarán</td></tr>
-                                </table>
-                            </div>
-
-                            <div class="conj-tense-block">
-                                <div class="conj-tense-header">Conditional (Condicional)</div>
-                                <table class="conj-table">
-                                    <tr><td class="conj-pronoun">yo</td><td class="conj-form estar-form">estaría</td></tr>
-                                    <tr><td class="conj-pronoun">tú</td><td class="conj-form estar-form">estarías</td></tr>
-                                    <tr><td class="conj-pronoun">él / ella / Ud.</td><td class="conj-form estar-form">estaría</td></tr>
-                                    <tr><td class="conj-pronoun">nosotros</td><td class="conj-form estar-form">estaríamos</td></tr>
-                                    <tr><td class="conj-pronoun">ellos / ellas / Uds.</td><td class="conj-form estar-form">estarían</td></tr>
-                                </table>
-                            </div>
-
-                            <div class="conj-tense-block">
-                                <div class="conj-tense-header">Present Subjunctive (Subjuntivo)</div>
-                                <table class="conj-table">
-                                    <tr><td class="conj-pronoun">yo</td><td class="conj-form estar-form">esté</td></tr>
-                                    <tr><td class="conj-pronoun">tú</td><td class="conj-form estar-form">estés</td></tr>
-                                    <tr><td class="conj-pronoun">él / ella / Ud.</td><td class="conj-form estar-form">esté</td></tr>
-                                    <tr><td class="conj-pronoun">nosotros</td><td class="conj-form estar-form">estemos</td></tr>
-                                    <tr><td class="conj-pronoun">ellos / ellas / Uds.</td><td class="conj-form estar-form">estén</td></tr>
-                                </table>
+                        <div class="se-comp-controls-row">
+                            <button id="se-comp-skip" class="control-btn">Don't Know</button>
+                            <button id="se-comp-undo" class="control-btn hidden">Undo</button>
+                            <button id="se-comp-next" class="control-btn hidden">Next</button>
+                            <div id="se-comp-progress-container" class="hidden">
+                                <div id="se-comp-progress-bar"></div>
                             </div>
                         </div>
+                    </div>
+                </div>
 
+                <div id="se-comp-stats" class="se-comp-section hidden">
+                    <div class="se-stats-subnav">
+                        <button class="se-stats-nav-btn active" data-statsview="standard">Standard</button>
+                        <button class="se-stats-nav-btn" data-statsview="advanced">Advanced</button>
+                    </div>
+
+                    <div id="se-stats-standard" class="se-stats-view">
+                        <div class="se-stats-circles-wrapper">
+                            <div class="se-circle-card" data-verb="ser" id="se-ser-card">
+                                <div class="se-circle-main">
+                                    <div class="se-circle-title ser-circle-title">SER</div>
+                                    <div class="se-circle-visual" id="se-ser-circle-wrap" data-tooltip="No attempts yet">
+                                        <svg class="se-progress-ring" viewBox="0 0 120 120">
+                                            <circle class="se-ring-bg" cx="60" cy="60" r="50"/>
+                                            <circle class="se-ring-fill ser-ring" id="se-ser-ring" cx="60" cy="60" r="50"/>
+                                        </svg>
+                                        <span class="se-circle-pct-text" id="se-ser-pct">—</span>
+                                    </div>
+                                    <div class="se-circle-subtitle">Click for more info.</div>
+                                </div>
+                                <div id="se-ser-breakdown" class="se-circle-breakdown"></div>
+                            </div>
+                            <div class="se-circle-card" data-verb="estar" id="se-estar-card">
+                                <div class="se-circle-main">
+                                    <div class="se-circle-title estar-circle-title">ESTAR</div>
+                                    <div class="se-circle-visual" id="se-estar-circle-wrap" data-tooltip="No attempts yet">
+                                        <svg class="se-progress-ring" viewBox="0 0 120 120">
+                                            <circle class="se-ring-bg" cx="60" cy="60" r="50"/>
+                                            <circle class="se-ring-fill estar-ring" id="se-estar-ring" cx="60" cy="60" r="50"/>
+                                        </svg>
+                                        <span class="se-circle-pct-text" id="se-estar-pct">—</span>
+                                    </div>
+                                    <div class="se-circle-subtitle">Click for more info.</div>
+                                </div>
+                                <div id="se-estar-breakdown" class="se-circle-breakdown"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="se-stats-advanced" class="se-stats-view hidden">
+                        <div class="se-comp-stats-controls">
+                            <input type="text" id="se-stats-search" placeholder="Search phrases...">
+                        </div>
+                        <div class="se-stats-table-wrapper">
+                            <table id="se-stats-table">
+                                <thead>
+                                    <tr>
+                                        <th data-se-sort="phrase">Phrase</th>
+                                        <th data-se-sort="category">Category</th>
+                                        <th data-se-sort="verb_pct">Verb %</th>
+                                        <th data-se-sort="conj_pct">Conj %</th>
+                                        <th data-se-sort="streak">Streak</th>
+                                        <th data-se-sort="attempts">Attempts</th>
+                                        <th data-se-sort="skip">Skip</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="se-stats-body"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
+
         </section>
 
         <section id="view-para-por" class="view hidden">
             <div class="pp-tab-bar">
-                <button class="pp-tab-btn active" data-panel="pp-practice">Practice</button>
-                <button class="pp-tab-btn" data-panel="pp-additional">Additional Practice</button>
+                <button class="pp-tab-btn active" data-panel="pp-practice">Practice <span class="se-tab-subtitle">(Thematic Roles)</span></button>
                 <button class="pp-tab-btn" data-panel="pp-competitive">Competitive</button>
             </div>
 
@@ -631,160 +596,133 @@
                 <div class="under-construction-banner">🚧 Under Construction — content may be incomplete or change.</div>
             </div>
 
-            <div id="pp-additional" class="pp-panel hidden">
-                <div class="under-construction-banner">🚧 Under Construction — content may be incomplete or change.</div>
-                <div class="conj-scroll">
-                    <div class="conj-two-col">
-
-                        <!-- PARA EXPRESSIONS -->
-                        <div class="conj-col">
-                            <div class="conj-col-header para-header">PARA — Common Expressions</div>
-
-                            <div class="conj-tense-block">
-                                <div class="conj-tense-header">Fixed Phrases</div>
-                                <table class="conj-table">
-                                    <tr><td class="conj-pronoun">para siempre</td><td class="conj-form para-form">forever</td></tr>
-                                    <tr><td class="conj-pronoun">para nada</td><td class="conj-form para-form">not at all</td></tr>
-                                    <tr><td class="conj-pronoun">para entonces</td><td class="conj-form para-form">by then</td></tr>
-                                    <tr><td class="conj-pronoun">para colmo</td><td class="conj-form para-form">to top it all off</td></tr>
-                                    <tr><td class="conj-pronoun">para mí / para ti</td><td class="conj-form para-form">in my / your opinion</td></tr>
-                                    <tr><td class="conj-pronoun">para que</td><td class="conj-form para-form">so that (+ subjunctive)</td></tr>
-                                    <tr><td class="conj-pronoun">estar para</td><td class="conj-form para-form">to be about to</td></tr>
-                                </table>
-                            </div>
-
-                            <div class="conj-tense-block">
-                                <div class="conj-tense-header">Example Sentences</div>
-                                <table class="conj-table">
-                                    <tr><td class="conj-pronoun">Te quiero para siempre.</td><td class="conj-form para-form">I love you forever.</td></tr>
-                                    <tr><td class="conj-pronoun">No me importa para nada.</td><td class="conj-form para-form">It doesn't matter to me at all.</td></tr>
-                                    <tr><td class="conj-pronoun">Lo hago para que aprendas.</td><td class="conj-form para-form">I do it so you can learn.</td></tr>
-                                    <tr><td class="conj-pronoun">Para mí, es muy difícil.</td><td class="conj-form para-form">In my opinion, it's very hard.</td></tr>
-                                    <tr><td class="conj-pronoun">Estoy para salir.</td><td class="conj-form para-form">I'm about to leave.</td></tr>
-                                </table>
-                            </div>
-
-                            <div class="conj-tense-block">
-                                <div class="conj-tense-header">Tricky Cases — Use PARA</div>
-                                <table class="conj-table">
-                                    <tr><td class="conj-pronoun">Surprising contrast</td><td class="conj-form para-form">Para ser principiante, hablas bien. — For a beginner, you speak well.</td></tr>
-                                    <tr><td class="conj-pronoun">Job / Employer</td><td class="conj-form para-form">Trabajo para el gobierno. — I work for the government.</td></tr>
-                                    <tr><td class="conj-pronoun">Deadline</td><td class="conj-form para-form">Necesito esto para el viernes. — I need this by Friday.</td></tr>
-                                </table>
-                            </div>
-                        </div>
-
-                        <!-- POR EXPRESSIONS -->
-                        <div class="conj-col">
-                            <div class="conj-col-header por-header">POR — Common Expressions</div>
-
-                            <div class="conj-tense-block">
-                                <div class="conj-tense-header">Fixed Phrases</div>
-                                <table class="conj-table">
-                                    <tr><td class="conj-pronoun">por favor</td><td class="conj-form por-form">please</td></tr>
-                                    <tr><td class="conj-pronoun">por supuesto</td><td class="conj-form por-form">of course</td></tr>
-                                    <tr><td class="conj-pronoun">por fin</td><td class="conj-form por-form">finally / at last</td></tr>
-                                    <tr><td class="conj-pronoun">por eso</td><td class="conj-form por-form">therefore / that's why</td></tr>
-                                    <tr><td class="conj-pronoun">por ahora</td><td class="conj-form por-form">for now</td></tr>
-                                    <tr><td class="conj-pronoun">por lo menos</td><td class="conj-form por-form">at least</td></tr>
-                                    <tr><td class="conj-pronoun">por lo tanto</td><td class="conj-form por-form">therefore</td></tr>
-                                    <tr><td class="conj-pronoun">por cierto</td><td class="conj-form por-form">by the way</td></tr>
-                                    <tr><td class="conj-pronoun">por si acaso</td><td class="conj-form por-form">just in case</td></tr>
-                                    <tr><td class="conj-pronoun">por lo general</td><td class="conj-form por-form">in general / generally</td></tr>
-                                </table>
-                            </div>
-
-                            <div class="conj-tense-block">
-                                <div class="conj-tense-header">Example Sentences</div>
-                                <table class="conj-table">
-                                    <tr><td class="conj-pronoun">Por favor, ayúdame.</td><td class="conj-form por-form">Please, help me.</td></tr>
-                                    <tr><td class="conj-pronoun">Por fin llegaste.</td><td class="conj-form por-form">You finally arrived.</td></tr>
-                                    <tr><td class="conj-pronoun">Está enfermo, por eso no vino.</td><td class="conj-form por-form">He's sick, that's why he didn't come.</td></tr>
-                                    <tr><td class="conj-pronoun">Por lo menos llámame.</td><td class="conj-form por-form">At least call me.</td></tr>
-                                    <tr><td class="conj-pronoun">Lleva un paraguas por si acaso.</td><td class="conj-form por-form">Bring an umbrella just in case.</td></tr>
-                                </table>
-                            </div>
-
-                            <div class="conj-tense-block">
-                                <div class="conj-tense-header">Tricky Cases — Use POR</div>
-                                <table class="conj-table">
-                                    <tr><td class="conj-pronoun">On behalf of</td><td class="conj-form por-form">Habló por todos. — He spoke on behalf of everyone.</td></tr>
-                                    <tr><td class="conj-pronoun">Per / Rate</td><td class="conj-form por-form">Gano diez dólares por hora. — I earn ten dollars per hour.</td></tr>
-                                    <tr><td class="conj-pronoun">In exchange for</td><td class="conj-form por-form">Te doy esto por eso. — I'll give you this in exchange for that.</td></tr>
-                                </table>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            </div>
         </section>
 
         <section id="view-aqui-alla" class="view hidden">
             <div class="aq-tab-bar">
-                <button class="aq-tab-btn active" data-panel="aq-practice">Practice</button>
-                <button class="aq-tab-btn" data-panel="aq-additional">Additional Practice</button>
+                <button class="aq-tab-btn active" data-panel="aq-practice">Practice <span class="se-tab-subtitle">(Spatial Deixis)</span></button>
                 <button class="aq-tab-btn" data-panel="aq-competitive">Competitive</button>
             </div>
 
             <div id="aq-practice" class="aq-panel">
                 <div class="aq-content-scroll">
+                    <div class="aq-practice-columns">
 
-                    <!-- ZONE 1: Near the Speaker -->
-                    <div class="aq-zone">
-                        <div class="aq-zone-header near-header">
-                            <span class="aq-zone-title">Near the Speaker</span>
-                            <span class="aq-zone-hint">aquí &amp; acá</span>
-                        </div>
-                        <div class="aq-word-row">
-                            <div class="aq-word-card">
-                                <span class="aq-word-name near-name speak-word" onclick="speakSpanish('aquí')">aquí</span>
-                                <p class="aq-word-desc">Points to a precise, fixed spot right next to you. Use it when referring to an exact location where you or something near you is.</p>
-                                <p class="aq-word-example">El libro está aquí. — <em>The book is right here.</em></p>
-                            </div>
-                            <div class="aq-word-card">
-                                <span class="aq-word-name near-name speak-word" onclick="speakSpanish('acá')">acá</span>
-                                <p class="aq-word-desc">A looser "here" that suggests movement toward you rather than a fixed point. Paired with motion verbs like <em>ven</em> to invite someone to come to where you are.</p>
-                                <p class="aq-word-example">Ven acá, por favor. — <em>Come here, please.</em></p>
-                            </div>
-                        </div>
-                    </div>
+                        <!-- LEFT: zone reference cards -->
+                        <div class="aq-practice-left">
 
-                    <!-- ZONE 2: Near the Listener -->
-                    <div class="aq-zone">
-                        <div class="aq-zone-header listener-header">
-                            <span class="aq-zone-title">Near the Listener</span>
-                            <span class="aq-zone-hint">ahí</span>
-                        </div>
-                        <div class="aq-word-row">
-                            <div class="aq-word-card">
-                                <span class="aq-word-name listener-name speak-word" onclick="speakSpanish('ahí')">ahí</span>
-                                <p class="aq-word-desc">Points to a location near the person you are speaking to, not where you are. Use it for the middle ground between yourself and somewhere far away.</p>
-                                <p class="aq-word-example">El gato está ahí, a tu lado. — <em>The cat is there, next to you.</em></p>
+                            <!-- ZONE 1: Near the Speaker -->
+                            <div class="aq-zone">
+                                <div class="aq-zone-header near-header">
+                                    <span class="aq-zone-title">Near the Speaker</span>
+                                    <span class="aq-zone-hint">aquí &amp; acá</span>
+                                </div>
+                                <div class="aq-word-row">
+                                    <div class="aq-word-card" data-aq-word="aquí">
+                                        <span class="aq-word-name near-name speak-word" onclick="speakSpanish('aquí')">aquí</span>
+                                        <p class="aq-word-desc">Points to a precise, fixed spot right next to you. Use it when referring to an exact location where you or something near you is.</p>
+                                        <p class="aq-word-example">El libro está aquí. — <em>The book is right here.</em></p>
+                                    </div>
+                                    <div class="aq-word-card" data-aq-word="acá">
+                                        <span class="aq-word-name near-name speak-word" onclick="speakSpanish('acá')">acá</span>
+                                        <p class="aq-word-desc">A looser "here" that suggests movement toward you rather than a fixed point. Paired with motion verbs like <em>ven</em> to invite someone to come to where you are.</p>
+                                        <p class="aq-word-example">Ven acá, por favor. — <em>Come here, please.</em></p>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
 
-                    <!-- ZONE 3: Far from Both -->
-                    <div class="aq-zone">
-                        <div class="aq-zone-header far-header">
-                            <span class="aq-zone-title">Far from Both</span>
-                            <span class="aq-zone-hint">allí &amp; allá</span>
-                        </div>
-                        <div class="aq-word-row">
-                            <div class="aq-word-card">
-                                <span class="aq-word-name far-name speak-word" onclick="speakSpanish('allí')">allí</span>
-                                <p class="aq-word-desc">Points to a specific, identifiable location that is far from both you and the person you are speaking to. Use it when you can pinpoint exactly where something is.</p>
-                                <p class="aq-word-example">La tienda está allí. — <em>The store is over there.</em></p>
+                            <!-- ZONE 2: Near the Listener -->
+                            <div class="aq-zone">
+                                <div class="aq-zone-header listener-header">
+                                    <span class="aq-zone-title">Near the Listener</span>
+                                    <span class="aq-zone-hint">ahí</span>
+                                </div>
+                                <div class="aq-word-row">
+                                    <div class="aq-word-card" data-aq-word="ahí">
+                                        <span class="aq-word-name listener-name speak-word" onclick="speakSpanish('ahí')">ahí</span>
+                                        <p class="aq-word-desc">Points to a location near the person you are speaking to, not where you are. Use it for the middle ground between yourself and somewhere far away.</p>
+                                        <p class="aq-word-example">El gato está ahí, a tu lado. — <em>The cat is there, next to you.</em></p>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="aq-word-card">
-                                <span class="aq-word-name far-name speak-word" onclick="speakSpanish('allá')">allá</span>
-                                <p class="aq-word-desc">A looser "over there" that implies movement away from you toward a general far direction. Paired with motion verbs like <em>vete</em> to send someone toward a distant area.</p>
-                                <p class="aq-word-example">Vete allá y espérame. — <em>Go over there and wait for me.</em></p>
-                            </div>
-                        </div>
-                    </div>
 
+                            <!-- ZONE 3: Far from Both -->
+                            <div class="aq-zone">
+                                <div class="aq-zone-header far-header">
+                                    <span class="aq-zone-title">Far from Both</span>
+                                    <span class="aq-zone-hint">allí &amp; allá</span>
+                                </div>
+                                <div class="aq-word-row">
+                                    <div class="aq-word-card" data-aq-word="allí">
+                                        <span class="aq-word-name far-name speak-word" onclick="speakSpanish('allí')">allí</span>
+                                        <p class="aq-word-desc">Points to a specific, identifiable location that is far from both you and the person you are speaking to. Use it when you can pinpoint exactly where something is.</p>
+                                        <p class="aq-word-example">La tienda está allí. — <em>The store is over there.</em></p>
+                                    </div>
+                                    <div class="aq-word-card" data-aq-word="allá">
+                                        <span class="aq-word-name far-name speak-word" onclick="speakSpanish('allá')">allá</span>
+                                        <p class="aq-word-desc">A looser "over there" that implies movement away from you toward a general far direction. Paired with motion verbs like <em>vete</em> to send someone toward a distant area.</p>
+                                        <p class="aq-word-example">Vete allá y espérame. — <em>Go over there and wait for me.</em></p>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div><!-- end .aq-practice-left -->
+
+                        <!-- RIGHT: spatial reference diagram -->
+                        <div class="aq-practice-right">
+                            <div class="aq-diagram">
+                                <div class="aq-diag-title">Spatial Reference Diagram</div>
+
+                                <!-- Person figures above each zone -->
+                                <div class="aq-diag-persons">
+                                    <div class="aq-diag-person-col">
+                                        <div class="aq-diag-icon">👤</div>
+                                        <div class="aq-diag-person-label">Speaker</div>
+                                    </div>
+                                    <div class="aq-diag-person-col">
+                                        <div class="aq-diag-icon">👤</div>
+                                        <div class="aq-diag-person-label">Listener</div>
+                                    </div>
+                                    <div class="aq-diag-person-col">
+                                        <div class="aq-diag-icon aq-diag-dots">• • •</div>
+                                        <div class="aq-diag-person-label">&nbsp;</div>
+                                    </div>
+                                </div>
+
+                                <!-- Zone bands with clickable terms -->
+                                <div class="aq-diag-zone-row">
+                                    <div class="aq-dz aq-dz-near">
+                                        <div class="aq-dz-label">Near the Speaker</div>
+                                        <div class="aq-dz-words">
+                                            <span class="aq-dz-word speak-word" onclick="speakSpanish('aquí');highlightAqWord('aquí')">aquí</span>
+                                            <span class="aq-dz-word speak-word" onclick="speakSpanish('acá');highlightAqWord('acá')">acá</span>
+                                        </div>
+                                    </div>
+                                    <div class="aq-dz aq-dz-listener">
+                                        <div class="aq-dz-label">Near the Listener</div>
+                                        <div class="aq-dz-words">
+                                            <span class="aq-dz-word speak-word" onclick="speakSpanish('ahí');highlightAqWord('ahí')">ahí</span>
+                                        </div>
+                                    </div>
+                                    <div class="aq-dz aq-dz-far">
+                                        <div class="aq-dz-label">Far from Both</div>
+                                        <div class="aq-dz-words">
+                                            <span class="aq-dz-word speak-word" onclick="speakSpanish('allí');highlightAqWord('allí')">allí</span>
+                                            <span class="aq-dz-word speak-word" onclick="speakSpanish('allá');highlightAqWord('allá')">allá</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Near → Far gradient axis -->
+                                <div class="aq-diag-axis">
+                                    <span class="aq-diag-axis-label">Near</span>
+                                    <div class="aq-diag-axis-bar"></div>
+                                    <span class="aq-diag-axis-label">Far</span>
+                                </div>
+                            </div>
+                        </div><!-- end .aq-practice-right -->
+
+                    </div><!-- end .aq-practice-columns -->
                 </div>
             </div>
 
@@ -792,103 +730,6 @@
                 <div class="under-construction-banner">🚧 Under Construction — content may be incomplete or change.</div>
             </div>
 
-            <div id="aq-additional" class="aq-panel hidden">
-                <div class="under-construction-banner">🚧 Under Construction — content may be incomplete or change.</div>
-                <div class="conj-scroll">
-                    <div class="conj-two-col">
-
-                        <!-- PREPOSITIONS OF LOCATION -->
-                        <div class="conj-col">
-                            <div class="conj-col-header near-header">Prepositions of Location</div>
-
-                            <div class="conj-tense-block">
-                                <div class="conj-tense-header">Vertical &amp; Surface</div>
-                                <table class="conj-table">
-                                    <tr><td class="conj-pronoun">encima de</td><td class="conj-form near-form">on top of / above</td></tr>
-                                    <tr><td class="conj-pronoun">debajo de</td><td class="conj-form near-form">underneath / below</td></tr>
-                                    <tr><td class="conj-pronoun">dentro de</td><td class="conj-form near-form">inside (of)</td></tr>
-                                    <tr><td class="conj-pronoun">fuera de</td><td class="conj-form near-form">outside (of)</td></tr>
-                                </table>
-                            </div>
-
-                            <div class="conj-tense-block">
-                                <div class="conj-tense-header">Front &amp; Back</div>
-                                <table class="conj-table">
-                                    <tr><td class="conj-pronoun">delante de</td><td class="conj-form near-form">in front of</td></tr>
-                                    <tr><td class="conj-pronoun">detrás de</td><td class="conj-form near-form">behind</td></tr>
-                                    <tr><td class="conj-pronoun">enfrente de</td><td class="conj-form near-form">across from / facing</td></tr>
-                                    <tr><td class="conj-pronoun">frente a</td><td class="conj-form near-form">in front of / facing</td></tr>
-                                </table>
-                            </div>
-
-                            <div class="conj-tense-block">
-                                <div class="conj-tense-header">Sides &amp; Distance</div>
-                                <table class="conj-table">
-                                    <tr><td class="conj-pronoun">al lado de</td><td class="conj-form near-form">next to / beside</td></tr>
-                                    <tr><td class="conj-pronoun">entre</td><td class="conj-form near-form">between / among</td></tr>
-                                    <tr><td class="conj-pronoun">cerca de</td><td class="conj-form near-form">near / close to</td></tr>
-                                    <tr><td class="conj-pronoun">lejos de</td><td class="conj-form near-form">far from</td></tr>
-                                </table>
-                            </div>
-
-                            <div class="conj-tense-block">
-                                <div class="conj-tense-header">Example Sentences</div>
-                                <table class="conj-table">
-                                    <tr><td class="conj-pronoun">El gato está encima de la mesa.</td><td class="conj-form near-form">The cat is on top of the table.</td></tr>
-                                    <tr><td class="conj-pronoun">El baño está al lado del cuarto.</td><td class="conj-form near-form">The bathroom is next to the room.</td></tr>
-                                    <tr><td class="conj-pronoun">La tienda está lejos de aquí.</td><td class="conj-form near-form">The store is far from here.</td></tr>
-                                    <tr><td class="conj-pronoun">Estoy entre tú y él.</td><td class="conj-form near-form">I am between you and him.</td></tr>
-                                </table>
-                            </div>
-                        </div>
-
-                        <!-- DEMONSTRATIVES -->
-                        <div class="conj-col">
-                            <div class="conj-col-header far-header">Demonstratives — Este / Ese / Aquel</div>
-
-                            <div class="conj-tense-block">
-                                <div class="conj-tense-header">Near Speaker — este / esta / esto</div>
-                                <table class="conj-table">
-                                    <tr><td class="conj-pronoun">este (masc.)</td><td class="conj-form far-form">this (one) — near you</td></tr>
-                                    <tr><td class="conj-pronoun">esta (fem.)</td><td class="conj-form far-form">this (one) — near you</td></tr>
-                                    <tr><td class="conj-pronoun">esto (neuter)</td><td class="conj-form far-form">this thing / this (abstract)</td></tr>
-                                    <tr><td class="conj-pronoun">estos / estas</td><td class="conj-form far-form">these — near you (plural)</td></tr>
-                                </table>
-                            </div>
-
-                            <div class="conj-tense-block">
-                                <div class="conj-tense-header">Near Listener — ese / esa / eso</div>
-                                <table class="conj-table">
-                                    <tr><td class="conj-pronoun">ese (masc.)</td><td class="conj-form far-form">that (one) — near you</td></tr>
-                                    <tr><td class="conj-pronoun">esa (fem.)</td><td class="conj-form far-form">that (one) — near you</td></tr>
-                                    <tr><td class="conj-pronoun">eso (neuter)</td><td class="conj-form far-form">that thing / that (abstract)</td></tr>
-                                    <tr><td class="conj-pronoun">esos / esas</td><td class="conj-form far-form">those — near you (plural)</td></tr>
-                                </table>
-                            </div>
-
-                            <div class="conj-tense-block">
-                                <div class="conj-tense-header">Far from Both — aquel / aquella / aquello</div>
-                                <table class="conj-table">
-                                    <tr><td class="conj-pronoun">aquel (masc.)</td><td class="conj-form far-form">that (one) — far away</td></tr>
-                                    <tr><td class="conj-pronoun">aquella (fem.)</td><td class="conj-form far-form">that (one) — far away</td></tr>
-                                    <tr><td class="conj-pronoun">aquello (neuter)</td><td class="conj-form far-form">that thing — far away (abstract)</td></tr>
-                                    <tr><td class="conj-pronoun">aquellos / aquellas</td><td class="conj-form far-form">those — far away (plural)</td></tr>
-                                </table>
-                            </div>
-
-                            <div class="conj-tense-block">
-                                <div class="conj-tense-header">Aligns with Adverbs</div>
-                                <table class="conj-table">
-                                    <tr><td class="conj-pronoun">este / esta / esto</td><td class="conj-form far-form">↔ aquí / acá</td></tr>
-                                    <tr><td class="conj-pronoun">ese / esa / eso</td><td class="conj-form far-form">↔ ahí</td></tr>
-                                    <tr><td class="conj-pronoun">aquel / aquella / aquello</td><td class="conj-form far-form">↔ allí / allá</td></tr>
-                                </table>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            </div>
         </section>
 
         </main>
@@ -1020,6 +861,39 @@
                     </div>
                 </div>
 
+                <div class="settings-group" id="settings-group-testing">
+                    <h3 data-group="testing">Testing Utilities <span class="settings-group-chevron">▼</span></h3>
+                    <div class="settings-group-body">
+                    <div class="setting-item">
+                        <label>Confetti</label>
+                        <div class="toggle-wrapper" style="flex-wrap: wrap; gap: 5px;">
+                            <button id="btn-test-confetti-burst"   class="data-btn" style="flex: 1;">Burst</button>
+                            <button id="btn-test-confetti-implode" class="data-btn" style="flex: 1;">Implode</button>
+                            <select id="sel-test-confetti-badge" style="flex: 2; padding: 5px 8px; border-radius: 6px; border: 1px solid var(--border, #ccc); background: var(--bg, #fff); color: inherit; font-size: 0.9em;">
+                                <option value="bronze">🥉 Bronze</option>
+                                <option value="silver">🥈 Silver</option>
+                                <option value="gold">🥇 Gold</option>
+                            </select>
+                            <button id="btn-test-confetti-badge" class="data-btn" style="flex: 1;">Fire Badge</button>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <label>Storage Warning</label>
+                        <div class="toggle-wrapper" style="flex-wrap: wrap; gap: 5px;">
+                            <button id="btn-test-storage-near-full"   class="data-btn" style="flex: 1;">Near Full (4 MB)</button>
+                            <button id="btn-test-storage-save-failed" class="data-btn" style="flex: 1; color: #fff; background-color: var(--danger); border-color: var(--danger);">Save Failed</button>
+                            <button id="btn-test-storage-dismiss"     class="data-btn" style="flex: 1;">Dismiss</button>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <label>Storage Size</label>
+                        <div class="toggle-wrapper" style="flex-wrap: wrap; gap: 5px;">
+                            <button id="btn-test-storage-size" class="data-btn" style="flex: 1;">Show Storage Size</button>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+
                 <div class="settings-group" id="settings-group-debugger">
                     <h3 data-group="debugger">Vocabulary Competitive Debugger <span class="settings-group-chevron">▼</span></h3>
                     <div class="settings-group-body">
@@ -1059,9 +933,26 @@
         </aside>
     </div>
 
-    <script src="data.js"></script>
-    <script src="speech.js"></script>
-    <script src="app.js"></script>
+    <script src="modules/globals.js"></script>
+    <script src="curriculum-data/PredictionTypes.js"></script>
+    <script src="modules/speech.js"></script>
+
+    <!-- Modules (loaded in dependency order) -->
+    <script src="modules/state.js"></script>
+    <script src="modules/bundles.js"></script>
+    <script src="modules/animations.js"></script>
+    <script src="modules/audio.js"></script>
+    <script src="modules/views.js"></script>
+    <script src="modules/stats.js"></script>
+    <script src="modules/user-actions-within-competitive.js"></script>
+    <script src="modules/debug.js"></script>
+    <script src="modules/save-and-load.js"></script>
+    <script src="modules/WIP/practice.js"></script>
+    <script src="modules/WIP/ser-estar.js"></script>
+    <script src="modules/WIP/para-por.js"></script>
+    <script src="modules/WIP/aqui-alla.js"></script>
+    <script src="modules/event-listeners.js"></script>
+    <script src="modules/init.js"></script>
 
     <!-- SVG Filters -->
     <svg style="display: none;">
