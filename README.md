@@ -1,6 +1,6 @@
 # Spanish Learning Tool
 
-A lightweight browser-based Spanish practice app focused on vocabulary training, grammar topic breakdowns, and competitive learning modes.
+A lightweight browser-based Spanish practice app (Panamanian Spanish) focused on vocabulary training, grammar topic breakdowns, and competitive learning modes.
 
 <img width="1800" height="910" alt="example" src="https://github.com/user-attachments/assets/898dd168-eb6f-42d7-a81f-4ecdc3c6ca12" />
 
